@@ -1,0 +1,57 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden; /* 🔧 Prevents horizontal scroll */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #f9f9f9;
+}
+
+
+
+/* 📱 Responsive Design */
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+
+  nav > div {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .modal-box {
+    width: 90% !important;
+    padding: 20px !important;
+  }
+
+  .modal-preview {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .modal-preview img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .modal-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .modal-buttons button {
+    width: 100%;
+  }
+
+  .modal-field input,
+  .modal-field select,
+  .modal-field textarea {
+    width: 100%;
+  }
+}

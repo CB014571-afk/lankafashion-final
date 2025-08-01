@@ -1,0 +1,145 @@
+
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f8f8;
+}
+
+/* NAV BAR*/
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f1b44c;
+  padding: 10px 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+}
+
+.brand-name {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: 'Georgia', serif;
+  color: #333;
+  letter-spacing: 1px;
+}
+
+.nav-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1;
+}
+
+.nav-links {
+  display: flex;
+  gap: 25px;
+}
+
+.nav-links a {
+  font-weight: bold;
+  color: #333;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-family: 'Segoe UI', sans-serif;
+  transition: color 0.3s ease;
+}
+
+.nav-links a:hover {
+  color: #fff;
+}
+
+.language-selector {
+  margin-left: auto;
+}
+
+.language-selector select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: none;
+  background-color: white;
+  font-weight: 500;
+}
+
+
+/* REGISTER FORM */
+.form-container {
+  max-width: 500px;
+  margin: 60px auto;
+  padding: 30px;
+  background-color: #fffef2;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+}
+
+.form-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #d07b00; /* nude orange theme */
+}
+
+.form label {
+  display: block;
+  margin-bottom: 15px;
+  color: #333;
+  font-weight: 500;
+}
+
+.form input[type="text"],
+.form input[type="email"],
+.form input[type="password"],
+.form select,
+.form textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-top: 5px;
+  box-sizing: border-box;
+}
+
+.form fieldset {
+  margin-top: 15px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  background-color: #fff8e6;
+}
+
+.form fieldset legend {
+  font-weight: bold;
+  color: #d07b00;
+}
+
+.form input[type="checkbox"] {
+  margin-right: 10px;
+}
+
+.form button {
+  width: 100%;
+  padding: 12px;
+  background-color: #ff9800;
+  border: none;
+  color: white;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.form button:hover {
+  background-color: #e68a00;
+}
+
