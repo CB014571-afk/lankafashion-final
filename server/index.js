@@ -9,10 +9,13 @@ dotenv.config();
 const app = express();
 
 // --- CORS: allow single or comma-separated origins via FRONTEND_URL or CORS_ORIGIN ---
+
+// Add your Vercel frontend URL here
+const vercelFrontend = "https://lankafashion-final-et6vrg5vj-shevontrihan-8413s-projects.vercel.app";
 const rawOrigins =
   process.env.CORS_ORIGIN ||
   process.env.FRONTEND_URL ||
-  "http://localhost:5173";
+  `http://localhost:5173,${vercelFrontend}`;
 
 const allowedOrigins = rawOrigins
   .split(",")
