@@ -16,12 +16,10 @@ const rawOrigins =
   process.env.CORS_ORIGIN ||
   process.env.FRONTEND_URL ||
   `http://localhost:5173,${vercelFrontend}`;
-
 const allowedOrigins = rawOrigins
   .split(",")
   .map(s => s.trim())
   .filter(Boolean);
-
 app.use(
   cors({
     origin: (origin, cb) => {
@@ -33,6 +31,13 @@ app.use(
     credentials: true,
   })
 );
+// Enable CORS for all origins during development
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json());
 
