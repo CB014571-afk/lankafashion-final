@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import API from "../../api";
+import API from "../services/api";
 import AddToCartModal from "../components/AddToCartModal";
 import "./Shop.css";
 import { FaStar } from "react-icons/fa";
