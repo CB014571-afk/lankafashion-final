@@ -1,27 +1,32 @@
 import axios from "axios";
 
-// Read env (Vite only exposes vars that start with VITE_)
-const raw = (import.meta.env.VITE_API_BASE_URL || "https://lankafashion-final.onrender.com").trim();
+// Read env (Vite exposes only VITE_*). Fallback to your Render host.
+const RAW = (import.meta.env.VITE_API_BASE_URL || "https://lankafashion-final.onrender.com").trim();
 
-// Ensure the base URL ends with `/api`
-function ensureApi(url) {
-  const noTrail = url.replace(/\/+$/, "");   // remove trailing slash(es)
-  return noTrail.endsWith("/api") ? noTrail : `${noTrail}/api`;
-}
-
-const baseURL = ensureApi(raw);
-console.log("🔎 API baseURL =", baseURL); // check this in prod Console
+// Ensure final baseURL ENDS with /api (no trailing slash after it)
+const ROOT = RAW.replace(/\/+$/, "");
+const baseURL = ROOT.endsWith("/api") ? ROOT : `${ROOT}/api`;
 
 const API = axios.create({
-  baseURL, // e.g. https://lankafashion-final.onrender.com/api
-  // Turn this off unless you actually use cookies/sessions:
-  withCredentials: false,
+  baseURL,                           // e.g. https://lankafashion-final.onrender.com/api
+  withCredentials: false,            // turn on only if you use cookies/sessions
+  headers: { "Content-Type": "application/json" },
 });
 
-// Safety: make sure every request path starts with a single leading slash
+// --- Option B sanitizer ---
+// 1) Ensure a single leading slash
+// 2) If the path starts with /api, drop that first /api (since baseURL already ends with /api)
 API.interceptors.request.use((cfg) => {
-  if (cfg.url && !cfg.url.startsWith("/")) cfg.url = "/" + cfg.url;
+  if (cfg.url) {
+    let u = cfg.url.toString();
+    if (!u.startsWith("/")) u = "/" + u;
+    u = u.replace(/^\/api(\/|$)/, "/"); // strip one leading /api
+    cfg.url = u;
+  }
   return cfg;
 });
+
+// (Optional) one-time debug to verify in prod
+console.log("🔎 API baseURL =", API.defaults.baseURL);
 
 export default API;
