@@ -1,13 +1,9 @@
-
-
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
-
 import { useAuth } from "../context/AuthContext";
 
 export default function SellerOrders() {
   const { user, token } = useAuth();
-  console.log("[SellerOrders] user:", user);
   const [pendingOrders, setPendingOrders] = useState([]);
   const [completedOrders, setCompletedOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,49 +11,63 @@ export default function SellerOrders() {
   const [markingId, setMarkingId] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchOrders = async () => {
-      if (!user?._id) return;
-      console.log("Fetching orders for", user._id);
+      if (!user?._id || !token) return;
       setLoading(true);
       setError("");
+
       try {
-        console.log("About to call API.get for orders", `/api/orders/seller/${user._id}`);
+        const auth = { headers: { Authorization: `Bearer ${token}` } };
+
         const [pendingRes, completedRes] = await Promise.all([
-          API.get(`/api/orders/seller/${user._id}`),
-          API.get(`/api/orders/seller/${user._id}/completed`),
+          API.get(`/api/orders/seller/${user._id}`, auth),
+          API.get(`/api/orders/seller/${user._id}/completed`, auth),
         ]);
-        setPendingOrders(pendingRes.data);
-        setCompletedOrders(completedRes.data);
+
+        if (!cancelled) {
+          setPendingOrders(pendingRes.data || []);
+          setCompletedOrders(completedRes.data || []);
+        }
       } catch (err) {
-        setError("Error loading orders.");
-        console.error("Order fetch error:", err);
+        if (!cancelled) setError("Error loading orders.");
+        console.error("Order fetch error:", err.response?.data || err.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
+
     fetchOrders();
-  }, [user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [user?._id, token]); // rerun when user or token becomes available
 
   const handleMarkDone = async (orderId, itemId) => {
+    if (!token) return;
     setMarkingId(itemId);
     try {
-      await API.put(`/api/orders/${orderId}/item/${itemId}/done`);
+      const auth = { headers: { Authorization: `Bearer ${token}` } };
+      await API.put(`/api/orders/${orderId}/item/${itemId}/done`, null, auth);
+
+      // optimistically update pending list
       setPendingOrders((prev) =>
         prev
-          .map((order) => {
-            if (order._id !== orderId) return order;
-            return {
-              ...order,
-              items: order.items.filter((item) => item._id !== itemId),
-            };
-          })
+          .map((order) =>
+            order._id === orderId
+              ? { ...order, items: order.items.filter((it) => it._id !== itemId) }
+              : order
+          )
           .filter((order) => order.items.length > 0)
       );
-      // Optionally, refetch completed orders
-      const completedRes = await API.get(`/api/orders/seller/${user._id}/completed`);
-      setCompletedOrders(completedRes.data);
+
+      // refresh completed list
+      const completedRes = await API.get(`/api/orders/seller/${user._id}/completed`, auth);
+      setCompletedOrders(completedRes.data || []);
     } catch (err) {
       setError("Error marking order as done.");
+      console.error("Mark done error:", err.response?.data || err.message);
     } finally {
       setMarkingId("");
     }
@@ -84,7 +94,7 @@ export default function SellerOrders() {
             </tr>
           </thead>
           <tbody>
-            {pendingOrders.map((order) =>
+            {pendingOrders.flatMap((order) =>
               order.items.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eee" }}>
                   <td>{item.product?.name || "-"}</td>
@@ -96,7 +106,14 @@ export default function SellerOrders() {
                     <button
                       onClick={() => handleMarkDone(order._id, item._id)}
                       disabled={markingId === item._id}
-                      style={{ background: "#4caf50", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
+                      style={{
+                        background: "#4caf50",
+                        color: "white",
+                        border: "none",
+                        borderRadius: 4,
+                        padding: "6px 12px",
+                        cursor: "pointer",
+                      }}
                     >
                       {markingId === item._id ? "Marking..." : "Mark as Done"}
                     </button>
@@ -124,7 +141,7 @@ export default function SellerOrders() {
             </tr>
           </thead>
           <tbody>
-            {completedOrders.map((order) =>
+            {completedOrders.flatMap((order) =>
               order.items.map((item) => (
                 <tr key={item._id} style={{ borderBottom: "1px solid #eee" }}>
                   <td>{item.product?.name || "-"}</td>
