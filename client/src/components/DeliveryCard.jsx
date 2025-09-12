@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link } from "react-router-dom";
-import API from "../api";
+import API from "../services/api";
 
 // ✅ Add onProofClick to props
 export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick }) {
