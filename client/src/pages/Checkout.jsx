@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Checkout.css";
-import API from "../api";
+import API from "../services/api";
 import { useCart } from "../context/CartContext";
 
 export default function Checkout() {

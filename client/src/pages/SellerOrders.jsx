@@ -1,7 +1,8 @@
 
 
 import React, { useEffect, useState } from "react";
-import API from "../api";
+import API from "../services/api";
+
 import { useAuth } from "../context/AuthContext";
 
 export default function SellerOrders() {

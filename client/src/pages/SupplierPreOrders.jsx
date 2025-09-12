@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import API from "../api";
+import API from "../services/api";
+
 
 export default function SupplierPreOrders() {
   const [preorders, setPreorders] = useState([]);

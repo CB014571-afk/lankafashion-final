@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import API from "../api";
+import API from "../services/api";
+
 
 const tabBtn = (active) => ({
   padding: "10px 20px",
