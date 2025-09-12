@@ -8,36 +8,37 @@ dotenv.config();
 
 const app = express();
 
-// --- CORS: allow single or comma-separated origins via FRONTEND_URL or CORS_ORIGIN ---
+// --- CORS CONFIG ---
+const VERCEL_PROJECT = "lankafashion-final"; // your project prefix
+const PROD_DOMAIN = `https://${VERCEL_PROJECT}.vercel.app`;
 
-// Add your Vercel frontend URL here
-const vercelFrontend = "https://lankafashion-final-et6vrg5vj-shevontrihan-8413s-projects.vercel.app";
-const rawOrigins =
-  process.env.CORS_ORIGIN ||
-  process.env.FRONTEND_URL ||
-  `http://localhost:5173,${vercelFrontend}`;
-const allowedOrigins = rawOrigins
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+function isAllowedOrigin(origin) {
+  if (!origin) return true; // allow curl/postman/server-to-server
+  try {
+    const url = new URL(origin);
+    return (
+      origin === "http://localhost:5173" || // local dev
+      origin === PROD_DOMAIN || // prod domain
+      (url.hostname.endsWith(".vercel.app") &&
+        url.hostname.startsWith(VERCEL_PROJECT)) // preview deployments
+    );
+  } catch {
+    return false;
+  }
+}
+
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow curl/postman/server-to-server
-      return allowedOrigins.includes(origin)
-        ? cb(null, true)
-        : cb(new Error("Not allowed by CORS"));
+      if (isAllowedOrigin(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
     },
-    credentials: true,
+    credentials: false, // ❗ set true ONLY if you actually use cookies/sessions
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-// Enable CORS for all origins during development
-app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
+app.options("*", cors()); // handle preflight
 
 app.use(express.json());
 
