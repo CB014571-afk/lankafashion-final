@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import API from "../services/api";
+import API from "../../api";
 import AddToCartModal from "../components/AddToCartModal";
 import "./Shop.css";
 import { FaStar } from "react-icons/fa";
@@ -29,23 +29,41 @@ export default function Shop() {
     try {
       setLoading(true);
       if (shopName) {
-        const res = await API.get(`/api/shops/${encodeURIComponent(shopName.trim())}`);
-        setProducts(res.data.products || []);
-        setShopInfo({
-          shopName: res.data.shopName,
-          description: res.data.description || "",
-          email: res.data.email || "",
-          contactNumber: res.data.contactNumber || "",
-        });
+        try {
+          const res = await API.get(`/api/shops/${encodeURIComponent(shopName.trim())}`);
+          setProducts(res.data.products || []);
+          setShopInfo({
+            shopName: res.data.shopName,
+            description: res.data.description || "",
+            email: res.data.email || "",
+            contactNumber: res.data.contactNumber || "",
+          });
+        } catch (err) {
+          if (err.response?.status === 404) {
+            setProducts([]);
+            setShopInfo(null);
+          }
+          throw err;
+        }
       } else {
-        const query = [];
-        if (category) query.push(`category=${encodeURIComponent(category)}`);
-        const res = await API.get(`/api/products/search?${query.join("&")}`);
-        setProducts(res.data);
-        setShopInfo(null);
+        try {
+          const query = [];
+          if (category) query.push(`category=${encodeURIComponent(category)}`);
+          const res = await API.get(`/api/products/search?${query.join("&")}`);
+          setProducts(res.data);
+          setShopInfo(null);
+        } catch (err) {
+          if (err.response?.status === 404) {
+            setProducts([]);
+            setShopInfo(null);
+          }
+          throw err;
+        }
       }
     } catch (err) {
       console.error("Error fetching products:", err);
+      setProducts([]);
+      setShopInfo(null);
     } finally {
       setLoading(false);
     }
@@ -57,6 +75,10 @@ export default function Shop() {
       setCategories(res.data.categories || []);
       setShopNames(res.data.shopNames || []);
     } catch (err) {
+      if (err.response?.status === 404) {
+        setCategories([]);
+        setShopNames([]);
+      }
       console.error("Error fetching meta data:", err);
     }
   };
@@ -67,6 +89,9 @@ export default function Shop() {
       setBestSellers(response.data ? [response.data] : []);
       console.log('Best seller data:', response.data);
     } catch (error) {
+      if (error.response?.status === 404) {
+        setBestSellers([]);
+      }
       console.error('Error fetching best sellers:', error);
       setBestSellers([]);
     }
@@ -78,6 +103,9 @@ export default function Shop() {
       const res = await API.get("/api/products/reviews");
       setReviews(res.data);
     } catch (err) {
+      if (err.response?.status === 404) {
+        setReviews([]);
+      }
       setReviews([]);
     }
   };
@@ -91,6 +119,9 @@ export default function Shop() {
       });
       setRecentlyViewed(res.data.recentlyViewed.map(p => p._id));
     } catch (err) {
+      if (err.response?.status === 404) {
+        setRecentlyViewed([]);
+      }
       setRecentlyViewed([]);
     }
   };
