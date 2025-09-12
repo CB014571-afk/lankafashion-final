@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import "./Checkout.css";
 import API from "../services/api";
+import "./Checkout.css";
 import { useCart } from "../context/CartContext";
 
 export default function Checkout() {
@@ -32,8 +31,9 @@ export default function Checkout() {
       alert("Your cart is empty.");
       return;
     }
+
     try {
-      // Get buyer ObjectId from context or localStorage
+      // Get buyer ObjectId from localStorage
       let buyer = null;
       try {
         const userObj = JSON.parse(localStorage.getItem("user"));
@@ -45,15 +45,20 @@ export default function Checkout() {
         alert("Invalid buyer ID. Please log in again.");
         return;
       }
+
       const items = cartItems
         .filter(
           (item) =>
             item.sellerId &&
             typeof item.sellerId === "string" &&
             item.sellerId.length === 24 &&
-            item._id && typeof item._id === "string" && item._id.length === 24 &&
-            typeof item.quantity === "number" && item.quantity > 0 &&
-            typeof item.price === "number" && item.price > 0
+            item._id &&
+            typeof item._id === "string" &&
+            item._id.length === 24 &&
+            typeof item.quantity === "number" &&
+            item.quantity > 0 &&
+            typeof item.price === "number" &&
+            item.price > 0
         )
         .map((item) => ({
           product: item._id,
@@ -61,44 +66,37 @@ export default function Checkout() {
           qty: item.quantity,
           price: item.price,
         }));
+
       if (items.length === 0) {
         alert("No valid items with seller found in cart.");
         return;
       }
-      const orderTotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
-      console.log("Calculated total:", orderTotal);
-      console.log("Items to be ordered:", items);
-      
-      try {
-        // First create the order
-        const orderResponse = await API.post("/orders", {
-          buyer,
-          items,
-          total: orderTotal
-        });
-        console.log("Order created:", orderResponse.data);
 
-        // Then create the delivery record
-        const deliveryResponse = await API.post("/delivery", {
-          ...formData,
-          buyer,
-          items,
-          total: orderTotal,
-          status: "pending",
-          orderId: orderResponse.data.order._id
-        });
-        console.log("Delivery created:", deliveryResponse.data);
-      } catch (error) {
-        console.error("Error details:", error.response?.data || error.message);
-        throw error; // Re-throw to be caught by the outer catch block
-      }
+      const orderTotal = items.reduce((sum, i) => sum + i.price * i.qty, 0);
+
+      // 1) Create the order
+      const orderResponse = await API.post("/api/orders", {
+        buyer,
+        items,
+        total: orderTotal,
+      });
+
+      // 2) Create the delivery record
+      await API.post("/api/delivery", {
+        ...formData,
+        buyer,
+        items,
+        total: orderTotal,
+        status: "pending",
+        orderId: orderResponse.data.order._id,
+      });
 
       clearCart();
-      alert("Order placed successfully! You will receive an email confirming your order.");
+      alert("Order placed successfully! You will receive a confirmation email.");
       navigate("/order-success");
     } catch (err) {
+      console.error("Checkout error:", err.response?.data || err.message);
       alert("Failed to place order. Please try again.");
-      console.error(err);
     }
   };
 
