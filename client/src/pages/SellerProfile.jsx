@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import API from "../services/api";
-
-
 import "./SellerProfile.css";
 
 export default function SellerProfile() {
@@ -14,9 +12,19 @@ export default function SellerProfile() {
   useEffect(() => {
     const fetchSeller = async () => {
       try {
-  const res = await API.get(`/sellers/${shopName}`);
-        setSeller(res.data.seller);
-        setProducts(res.data.products);
+        // Backend already exposes this via shopRoutes (same as in Shop.jsx)
+        const res = await API.get(`/api/shops/${encodeURIComponent(shopName)}`);
+        setSeller({
+          shopName: res.data.shopName,
+          description: res.data.description || "",
+          email: res.data.email || "",
+          contactNumber: res.data.contactNumber || "",
+          designType: res.data.designType || "",
+          customSize: res.data.customSize || false,
+          onDemand: res.data.onDemand || false,
+          uploadInspiration: res.data.uploadInspiration || false,
+        });
+        setProducts(res.data.products || []);
       } catch (err) {
         console.error("Error loading seller profile:", err);
       } finally {
@@ -40,6 +48,7 @@ export default function SellerProfile() {
         <p><strong>Design Type:</strong> {seller.designType}</p>
         <p><strong>Description:</strong> {seller.description}</p>
         <p><strong>Contact Email:</strong> {seller.email}</p>
+        <p><strong>Contact Number:</strong> {seller.contactNumber || "—"}</p>
         <p><strong>Custom Size:</strong> {seller.customSize ? "Yes" : "No"}</p>
         <p><strong>On Demand:</strong> {seller.onDemand ? "Yes" : "No"}</p>
         <p><strong>Upload Inspiration:</strong> {seller.uploadInspiration ? "Yes" : "No"}</p>
@@ -52,11 +61,11 @@ export default function SellerProfile() {
             {product.images?.[0] && (
               <img
                 src={product.images[0]}
-                alt={product.title}
+                alt={product.name}
                 className="seller-product-image"
               />
             )}
-            <h4 className="seller-product-title">{product.title}</h4>
+            <h4 className="seller-product-title">{product.name}</h4>
             <p className="seller-product-desc">{product.description}</p>
             <p><strong>Rs:</strong> {product.price}</p>
           </div>
