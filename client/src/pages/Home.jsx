@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+
 export default function Home() {
   return (
     <div style={styles.wrapper}>
@@ -19,6 +20,7 @@ export default function Home() {
         <div style={styles.featureGrid}>
           <div style={styles.featureCard}>
             <h3 style={styles.featureTitle}>🌟 Unique Products</h3>
+
             <p style={styles.featureText}>Support local artisans & discover one-of-a-kind items.</p>
           </div>
           <div style={styles.featureCard}>

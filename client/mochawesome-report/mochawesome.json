@@ -1,0 +1,100 @@
+{
+  "stats": {
+    "suites": 1,
+    "tests": 1,
+    "passes": 1,
+    "pending": 0,
+    "failures": 0,
+    "start": "2025-09-08T07:01:22.705Z",
+    "end": "2025-09-08T07:01:29.736Z",
+    "duration": 7031,
+    "testsRegistered": 1,
+    "passPercent": 100,
+    "pendingPercent": 0,
+    "other": 0,
+    "hasOther": false,
+    "skipped": 0,
+    "hasSkipped": false
+  },
+  "results": [
+    {
+      "uuid": "716fd771-56b0-4fb6-899c-864750a45395",
+      "title": "",
+      "fullFile": "cypress\\e2e\\driver_registration.cy.js",
+      "file": "cypress\\e2e\\driver_registration.cy.js",
+      "beforeHooks": [],
+      "afterHooks": [],
+      "tests": [],
+      "suites": [
+        {
+          "uuid": "1f1455a8-cd60-439c-bc00-5c3bec8a30d5",
+          "title": "Driver Registration",
+          "fullFile": "",
+          "file": "",
+          "beforeHooks": [],
+          "afterHooks": [],
+          "tests": [
+            {
+              "title": "should register a new driver successfully",
+              "fullTitle": "Driver Registration should register a new driver successfully",
+              "timedOut": null,
+              "duration": 5306,
+              "state": "passed",
+              "speed": "medium",
+              "pass": true,
+              "fail": false,
+              "pending": false,
+              "context": null,
+              "code": "cy.visit('http://localhost:5173/register');\ncy.get('select[name=\"role\"]').select('Driver');\ncy.get('input[name=\"name\"]').type('Test Driver');\ncy.get('input[name=\"email\"]').type('testdriver@example.com');\ncy.get('input[name=\"password\"]').type('TestPassword123');\ncy.get('button[type=\"submit\"]').click();\ncy.on('window:alert', str => {\n  expect(str).to.equal('Registered successfully!');\n});",
+              "err": {},
+              "uuid": "2e13cf72-38a4-4dc7-9b3d-e5539be068a9",
+              "parentUUID": "1f1455a8-cd60-439c-bc00-5c3bec8a30d5",
+              "isHook": false,
+              "skipped": false
+            }
+          ],
+          "suites": [],
+          "passes": [
+            "2e13cf72-38a4-4dc7-9b3d-e5539be068a9"
+          ],
+          "failures": [],
+          "pending": [],
+          "skipped": [],
+          "duration": 5306,
+          "root": false,
+          "rootEmpty": false,
+          "_timeout": 2000
+        }
+      ],
+      "passes": [],
+      "failures": [],
+      "pending": [],
+      "skipped": [],
+      "duration": 0,
+      "root": true,
+      "rootEmpty": true,
+      "_timeout": 2000
+    }
+  ],
+  "meta": {
+    "mocha": {
+      "version": "7.2.0"
+    },
+    "mochawesome": {
+      "options": {
+        "quiet": false,
+        "reportFilename": "mochawesome",
+        "saveHtml": true,
+        "saveJson": true,
+        "consoleReporter": "spec",
+        "useInlineDiffs": false,
+        "code": true
+      },
+      "version": "7.1.3"
+    },
+    "marge": {
+      "options": null,
+      "version": "6.2.0"
+    }
+  }
+}

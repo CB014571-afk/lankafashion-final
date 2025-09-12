@@ -15,8 +15,12 @@ import BuyerOrders from "./pages/BuyerOrders";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-// 👉 Add this import (create it if you don't have it yet)
+
 import SellerDashboard from "./pages/SellerDashboard";
+import SupplierDashboard from "./pages/SupplierDashboard";
+import SupplierPreOrders from "./pages/SupplierPreOrders";
+import DriverDashboard from "./pages/DriverDashboard";
+import DeliveryDetails from "./pages/DeliveryDetails";
 
 const ProtectedRoute = ({ children, allow }) => {
   const token = localStorage.getItem("token");
@@ -30,49 +34,95 @@ const ProtectedRoute = ({ children, allow }) => {
 export default function Router() {
   return (
     <Routes>
-      {/* Public / Buyer */}
-      <Route path="/" element={<Home />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/shop" element={<Shop />} />
-      <Route path="/cart" element={<Cart />} />
-      <Route path="/checkout" element={<Checkout />} />
-      <Route path="/order-success" element={<OrderSuccess />} />
-      <Route path="/seller/:shopName" element={<SellerProfile />} />
-      <Route path="/buyer-orders" element={
-        <ProtectedRoute allow={["buyer"]}>
-          <BuyerOrders />
-        </ProtectedRoute>
-      } />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password/:token" element={<ResetPassword />} />
+  {/* Public / Buyer */}
+  <Route path="/" element={<Home />} />
+  <Route path="/register" element={<Register />} />
+  <Route path="/login" element={<Login />} />
+  <Route path="/shop" element={<Shop />} />
+  <Route path="/cart" element={<Cart />} />
+  <Route path="/checkout" element={<Checkout />} />
+  <Route path="/order-success" element={<OrderSuccess />} />
+  <Route path="/seller/:shopName" element={<SellerProfile />} />
+  <Route
+    path="/buyer-orders"
+    element={
+      <ProtectedRoute allow={["buyer"]}>
+        <BuyerOrders />
+      </ProtectedRoute>
+    }
+  />
+  <Route path="/forgot-password" element={<ForgotPassword />} />
+  <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-      {/* Seller-only */}
-      <Route path="/seller" element={
-        <ProtectedRoute allow={["seller"]}>
-          <SellerDashboard />
-        </ProtectedRoute>
-      } />
+  {/* Seller-only */}
+  <Route
+    path="/seller"
+    element={
+      <ProtectedRoute allow={["seller"]}>
+        <SellerDashboard />
+      </ProtectedRoute>
+    }
+  />
 
-      {/* Keep your old seller pages if you still navigate to them directly */}
-      <Route path="/seller-orders" element={
-        <ProtectedRoute allow={["seller"]}>
-          <SellerOrders />
-        </ProtectedRoute>
-      } />
-      <Route path="/preorder" element={
-        <ProtectedRoute allow={["seller"]}>
-          <PreOrderRequest />
-        </ProtectedRoute>
-      } />
+  {/* Supplier-only */}
+  <Route
+    path="/supplier-dashboard"
+    element={
+      <ProtectedRoute allow={["supplier"]}>
+        <SupplierDashboard />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/supplier-preorders"
+    element={
+      <ProtectedRoute allow={["supplier"]}>
+        <SupplierPreOrders />
+      </ProtectedRoute>
+    }
+  />
 
-      {/* Redirect old links to the dashboard */}
-      <Route path="/my-store" element={<Navigate to="/seller" replace />} />
-      <Route path="/add-product" element={<Navigate to="/seller" replace />} />
-      <Route path="/profile" element={<Navigate to="/seller" replace />} />
+  {/* Keep your old seller pages if you still navigate to them directly */}
+  <Route
+    path="/seller-orders"
+    element={
+      <ProtectedRoute allow={["seller"]}>
+        <SellerOrders />
+      </ProtectedRoute>
+    }
+  />
+  <Route
+    path="/preorder"
+    element={
+      <ProtectedRoute allow={["seller"]}>
+        <PreOrderRequest />
+      </ProtectedRoute>
+    }
+  />
 
-      {/* 404 */}
-      <Route path="*" element={<div style={{ padding: 20 }}>Page Not Found</div>} />
-    </Routes>
+  {/* Redirect old links to the dashboard */}
+  <Route path="/my-store" element={<Navigate to="/seller" replace />} />
+  <Route path="/add-product" element={<Navigate to="/seller" replace />} />
+  <Route path="/profile" element={<Navigate to="/seller" replace />} />
+
+ {/* when i add route path for driver dashboard here,  the whole page won't show up.
+  when I dont add, the page content won't show up*/}
+  <Route
+  path="/driver-dashboard"
+  element={
+    <ProtectedRoute allow={["driver"]}>
+      <DriverDashboard />
+    </ProtectedRoute>
+  }
+/>
+<Route path="/my-orders" element={<BuyerOrders />} />
+  
+  {/* 404 */}
+  <Route
+    path="*"
+    element={<div style={{ padding: 20 }}>Page Not Found</div>}
+  />
+</Routes>
+
   );
 }

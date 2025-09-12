@@ -1,86 +1,114 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from "../services/api";
+import "./BuyerOrders.css";
 
 export default function BuyerOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Removed filter dropdown and status
 
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await axios.get("http://localhost:5000/api/orders/my", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        const res = await API.get("/api/orders/my", {
+          headers: { Authorization: `Bearer ${token}` },
         });
-        setOrders(res.data);
+        setOrders(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Error fetching orders:", err);
+        setOrders([]);
       } finally {
         setLoading(false);
       }
     };
-
     fetchOrders();
   }, []);
 
-  const containerStyle = {
-    maxWidth: "800px",
-    margin: "40px auto",
-    padding: "20px",
-    backgroundColor: "#fdf6f0",
-    borderRadius: "10px",
-    fontFamily: "Arial, sans-serif",
-  };
+  // Show all orders, no filter
+  const filteredOrders = orders;
 
-  const cardStyle = {
-    backgroundColor: "#fff",
-    borderRadius: "10px",
-    padding: "20px",
-    marginBottom: "20px",
-    boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
-  };
-
-  const itemStyle = {
-    paddingLeft: "10px",
-    marginBottom: "6px",
-  };
-
-  const titleStyle = {
-    fontSize: "24px",
-    marginBottom: "20px",
-    color: "#cc6600",
-    fontWeight: "bold",
+  const getStatusClass = (status) => {
+    if (!status || typeof status !== "string") return "status-default";
+    switch(status.toLowerCase()) {
+      case 'completed': return 'status-completed';
+      case 'cancelled': return 'status-cancelled';
+      case 'pending': return 'status-pending';
+      case 'done': return 'status-completed';
+      default: return 'status-default';
+    }
   };
 
   return (
-    <div style={containerStyle}>
-      <h2 style={titleStyle}>Your Orders</h2>
+    <div className="orders-container">
+      <div className="orders-header">
+        <h2>Order History</h2>
+      </div>
 
       {loading ? (
-        <p>Loading orders...</p>
-      ) : orders.length === 0 ? (
-        <p>You have no orders yet.</p>
+        <div className="loading-spinner">Loading orders...</div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="no-orders">No orders found.</div>
       ) : (
-        orders.map((order) => (
-          <div key={order._id} style={cardStyle}>
-            <h3>Order #{order._id.slice(-6)}</h3>
-            <p><strong>Date:</strong> {new Date(order.createdAt).toLocaleDateString()}</p>
-            <p><strong>Status:</strong> {order.status || "Processing"}</p>
-            <p><strong>Total:</strong> Rs {order.totalAmount}</p>
-            <div style={{ marginTop: "10px" }}>
-              <strong>Items:</strong>
-              {order.products.map((item, i) => (
-                <div key={i} style={itemStyle}>
-                  - {item.name} (Qty: {item.quantity})<br />
-                  {item.ukSize && <>Size: {item.ukSize} | </>}
-                  {item.specialRequest && <>Request: {item.specialRequest}</>}
+        <div className="orders-list">
+          {filteredOrders.map((order) => {
+            const items = order.items || order.products || [];
+            const total = order.total ?? order.totalAmount ?? 0;
+            const created = order.createdAt 
+              ? new Date(order.createdAt).toLocaleDateString('en-US', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })
+              : '-';
+
+            return (
+              <div key={order._id} className="order-card">
+                <div className="order-header">
+                  {order.status && order.status.toLowerCase() !== "processing" && (
+                    <span className={`order-status ${getStatusClass(order.status)}`}>
+                      {order.status}
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          </div>
-        ))
+                
+                <div className="order-info">
+                  <div className="order-date">Ordered on: {created}</div>
+                  <div className="order-total">Total: Rs {total.toLocaleString()}</div>
+                </div>
+
+                <div className="order-items">
+                  <h4>Items</h4>
+                  {items.map((item, i) => {
+                    const name = item.product?.name ?? item.name ?? "Item";
+                    const qty = item.qty ?? item.quantity ?? 1;
+                    const unitPrice = item.price ?? item.unitPrice;
+
+                    return (
+                      <div key={i} className="order-item">
+                        <div className="item-name">{name}</div>
+                        <div className="item-details">
+                          <span>Qty: {qty}</span>
+                          {typeof unitPrice === "number" && 
+                            <span>Price: Rs {unitPrice.toLocaleString()}</span>
+                          }
+                        </div>
+                        {(item.ukSize || item.specialRequest) && (
+                          <div className="item-extras">
+                            {item.ukSize && <span>Size: {item.ukSize}</span>}
+                            {item.specialRequest && 
+                              <span>Special Request: {item.specialRequest}</span>
+                            }
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
     </div>
   );

@@ -2,6 +2,7 @@ const express = require("express");
 const multer = require("multer");
 const path = require("path");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const Product = require("../models/Product");
 const Order = require("../models/Order");
@@ -48,6 +49,59 @@ router.post("/materials", auth, requireRole("seller"), upload.single("image"), a
   } catch (err) {
     console.error("❌ Material Request Error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+});
+
+// Get best seller information
+router.get("/best-seller", async (req, res) => {
+  try {
+    // Aggregate orders to find the seller with most sales
+    const bestSeller = await Order.aggregate([
+      // Unwind the items array to get one document per item
+      { $unwind: "$items" },
+      // Group by seller and count total items sold
+      {
+        $group: {
+          _id: "$items.seller",
+          totalItemsSold: { $sum: "$items.qty" },
+          totalAmount: { $sum: { $multiply: ["$items.price", "$items.qty"] } }
+        }
+      },
+      // Sort by total items sold in descending order
+      { $sort: { totalItemsSold: -1 } },
+      // Limit to 1 result (the best seller)
+      { $limit: 1 },
+      // Lookup seller details
+      {
+        $lookup: {
+          from: "users",
+          localField: "_id",
+          foreignField: "_id",
+          as: "sellerDetails"
+        }
+      },
+      // Unwind the seller details
+      { $unwind: "$sellerDetails" },
+      // Project only needed fields
+      {
+        $project: {
+          _id: 1,
+          totalItemsSold: 1,
+          totalAmount: 1,
+          shopName: "$sellerDetails.shopName",
+          name: "$sellerDetails.name"
+        }
+      }
+    ]);
+
+    if (!bestSeller.length) {
+      return res.status(404).json({ message: "No seller data found" });
+    }
+
+    res.json(bestSeller[0]);
+  } catch (err) {
+    console.error("Error finding best seller:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

@@ -13,6 +13,16 @@ const productSchema = new mongoose.Schema(
     category: { type: String },
     images: [String], // array of image URLs
     shopName: { type: String }, // shop name of the seller
+    reviews: {
+      type: [
+        new mongoose.Schema({
+          user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+          rating: Number,
+          text: String,
+        }, { _id: true })
+      ],
+      default: []
+    },
   },
   { timestamps: true }
 );

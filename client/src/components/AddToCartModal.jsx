@@ -19,6 +19,7 @@ export default function AddToCartModal({ product, onClose }) {
       quantity,
       ukSize,
       specialRequest,
+      sellerId: product.sellerId, // Ensure sellerId is included in cart
     });
     onClose();
   };

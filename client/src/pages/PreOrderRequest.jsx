@@ -1,139 +1,229 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import API from "../api";
 import { useNavigate } from "react-router-dom";
 
 export default function PreOrderRequest() {
-  const [description, setDescription] = useState("");
+  const [materialName, setMaterialName] = useState("");
+  const [email, setEmail] = useState("");
+  const [contactNumber, setContactNumber] = useState("");
   const [quantity, setQuantity] = useState("");
   const [preferredDate, setPreferredDate] = useState("");
-  const [image, setImage] = useState(null);
+  const [paymentOption, setPaymentOption] = useState("pay_now");
+  const [payLaterDueDate, setPayLaterDueDate] = useState("");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [restricted, setRestricted] = useState(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
     const role = localStorage.getItem("role");
+    const user = JSON.parse(localStorage.getItem("user"));
     if (role !== "seller") {
       alert("Access denied. Only sellers can use this page.");
       navigate("/");
+      return;
+    }
+    // Check for overdue restriction
+    if (user?._id) {
+      API.get(`/api/preorder/overdue/${user._id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      })
+        .then(res => {
+          setRestricted(res.data.restricted);
+        })
+        .catch(() => setRestricted(false));
     }
   }, [navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setError("");
+    setSuccess("");
+    // Restriction check
+    if (restricted) {
+      setError("You are restricted from making new preorders due to overdue payments.");
+      return;
+    }
+    // Validate pay later due date
+    if (paymentOption === "pay_later" && payLaterDueDate) {
+      const today = new Date();
+      const due = new Date(payLaterDueDate);
+      const maxDue = new Date();
+      maxDue.setMonth(maxDue.getMonth() + 1);
+      if (due < today) {
+        setError("Payment due date cannot be in the past.");
+        return;
+      }
+      if (due > maxDue) {
+        setError("Payment due date must be within one month from today.");
+        return;
+      }
+    }
     try {
       const token = localStorage.getItem("token");
-
-      const formData = new FormData();
-      formData.append("description", description);
-      formData.append("quantity", quantity);
-      formData.append("preferredDate", preferredDate);
-      if (image) {
-        formData.append("image", image);
-      }
-
-      const response = await axios.post(
-        "http://localhost:5000/api/seller/materials",
-        formData,
+      const res = await API.post(
+        "/preorder/submit",
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
+          materialName,
+          email,
+          contactNumber,
+          quantity,
+          preferredDate,
+          paymentOption,
+          paymentDueDate: payLaterDueDate || undefined,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      alert("Your pre-order request has been submitted.");
-      console.log(response.data);
-      setDescription("");
+      setSuccess("Preorder request submitted!");
+      setTimeout(() => navigate("/seller"), 1500);
+      setMaterialName("");
+      setEmail("");
+      setContactNumber("");
       setQuantity("");
       setPreferredDate("");
-      setImage(null);
-    } catch (error) {
-      console.error("Error submitting material request:", error);
-      alert("Something went wrong! Check your login and token.");
+      setPaymentOption("pay_now");
+      setPayLaterDueDate("");
+    } catch (err) {
+      setError("Error submitting preorder request.");
     }
   };
 
-  const containerStyle = {
-    maxWidth: "600px",
-    margin: "50px auto",
-    padding: "30px",
-    background: "#fff8f0",
-    borderRadius: "10px",
-    boxShadow: "0 0 15px rgba(0,0,0,0.1)",
-    fontFamily: "Arial, sans-serif",
-  };
-
-  const inputStyle = {
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "6px",
-    border: "1px solid #ccc",
-  };
-
-  const labelStyle = {
-    fontWeight: "bold",
-    display: "block",
-    marginTop: "15px",
-  };
-
-  const buttonStyle = {
-    padding: "12px 20px",
-    backgroundColor: "#cc6600",
-    color: "#fff",
-    border: "none",
-    borderRadius: "6px",
-    marginTop: "20px",
-    cursor: "pointer",
-  };
-
   return (
-    <div style={containerStyle}>
-      <h2 style={{ textAlign: "center", color: "#cc6600" }}>
-        📦 Seller Pre-Order Request
-      </h2>
+    <div style={{ maxWidth: 400, margin: "60px auto", padding: 30, background: "#fff4eb", borderRadius: 10 }}>
+      <h2 style={{ textAlign: "center", color: "#cc6600" }}>PreOrder Request</h2>
+      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
+      {success && <p style={{ color: "green", textAlign: "center" }}>{success}</p>}
+      {restricted && (
+        <div style={{ color: "red", textAlign: "center", marginBottom: 10 }}>
+          You are restricted from making new preorders due to overdue payments.
+        </div>
+      )}
       <form onSubmit={handleSubmit}>
-        <label style={labelStyle}>Description of Materials:</label>
-        <textarea
-          placeholder="What do you need?"
-          rows="3"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          style={inputStyle}
-          required
-        />
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Material Name:
+          </label>
+          <input
+            type="text"
+            placeholder="Enter material name (e.g., Cotton Fabric, Silk, Denim)"
+            value={materialName}
+            onChange={e => setMaterialName(e.target.value)}
+            required
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          />
+          <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+            Specify the exact material you need
+          </small>
+        </div>
 
-        <label style={labelStyle}>Estimated Quantity:</label>
-        <input
-          type="number"
-          placeholder="e.g. 100 units"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          style={inputStyle}
-          required
-        />
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Contact Email:
+          </label>
+          <input
+            type="email"
+            placeholder="Enter your email address"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          />
+          <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+            Supplier will use this email to contact you
+          </small>
+        </div>
 
-        <label style={labelStyle}>Preferred Delivery Date:</label>
-        <input
-          type="date"
-          value={preferredDate}
-          onChange={(e) => setPreferredDate(e.target.value)}
-          style={inputStyle}
-          required
-        />
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Contact Number:
+          </label>
+          <input
+            type="tel"
+            placeholder="Enter your contact number"
+            value={contactNumber}
+            onChange={e => setContactNumber(e.target.value)}
+            required
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          />
+          <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+            Provide a valid contact number for supplier communication
+          </small>
+        </div>
 
-        <label style={labelStyle}>Optional Image Upload:</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setImage(e.target.files[0])}
-          style={inputStyle}
-        />
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Quantity:
+          </label>
+          <input
+            type="text"
+            placeholder="e.g., 50 meters, 100 kg, 200 pieces"
+            value={quantity}
+            onChange={e => setQuantity(e.target.value)}
+            required
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          />
+          <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+            Always include the unit of measurement (meters, kg, pieces, etc.)
+          </small>
+        </div>
 
-        <button type="submit" style={buttonStyle}>
-          Submit Request
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Preferred Delivery Date:
+          </label>
+          <input
+            type="date"
+            value={preferredDate}
+            onChange={e => setPreferredDate(e.target.value)}
+            required
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          />
+          <small style={{ color: "#666", fontSize: "12px", display: "block", marginTop: "5px" }}>
+            Select your desired delivery date (subject to supplier confirmation)
+          </small>
+        </div>
+
+        <div style={{ marginBottom: "20px" }}>
+          <label style={{ display: "block", marginBottom: "5px", color: "#333", fontWeight: "bold" }}>
+            Payment Option:
+          </label>
+          <select
+            value={paymentOption}
+            onChange={e => setPaymentOption(e.target.value)}
+            style={{ width: "100%", padding: 10, borderRadius: 5, border: "1px solid #ccc" }}
+          >
+            <option value="pay_now">Pay Now</option>
+            <option value="pay_later">Pay Later</option>
+          </select>
+          {paymentOption === "pay_later" && (
+            <div style={{ marginTop: "10px", padding: "10px", backgroundColor: "#fff0e6", borderRadius: "5px" }}>
+              <strong style={{ color: "#cc6600", fontSize: "14px" }}>Important Payment Terms:</strong>
+              <ul style={{ marginTop: "5px" }}>
+                <li>Payment must be completed within 1 month of supplier acceptance</li>
+                <li>Late payments will result in restriction from making new requests</li>
+                <li>Early payment may improve your buyer reputation</li>
+              </ul>
+            </div>
+          )}
+        </div>
+
+        <button 
+          type="submit" 
+          style={{ 
+            width: "100%", 
+            padding: "12px", 
+            marginTop: 15, 
+            background: "#cc6600", 
+            color: "white", 
+            border: "none", 
+            borderRadius: 5, 
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: "bold"
+          }}
+        >
+          Submit Pre-Order Request
         </button>
       </form>
     </div>

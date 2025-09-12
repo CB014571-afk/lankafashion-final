@@ -1,26 +1,33 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 import { useNavigate, Link } from "react-router-dom";
+import API from "../api";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
       setError("");
-      const res = await axios.post("http://localhost:5000/api/users/login", {
-        email,
-        password,
-      });
-
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("role", res.data.user.role);
-      localStorage.setItem("name", res.data.user.name);
-      navigate("/");
+  const res = await API.post("/users/login", { email, password });
+      const { token, user } = res.data;
+      login(token, user.role, user);
+      if (user.role === "seller") {
+        navigate("/seller");
+      } else if (user.role === "supplier") {
+        navigate("/supplier-dashboard");
+      } else if (user.role === "admin") {
+        navigate("/");
+      } else if (user.role === "driver") {
+        navigate("/driver-dashboard");
+      } else {
+        navigate("/");
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("Invalid email or password.");
@@ -69,7 +76,7 @@ export default function Login() {
   return (
     <div style={containerStyle}>
       <h2 style={{ textAlign: "center", color: "#cc6600" }}>Login</h2>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
       <form onSubmit={handleLogin}>
         <input
           type="email"
@@ -86,10 +93,9 @@ export default function Login() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          autoComplete="current-password"
         />
-
         <button type="submit" style={buttonStyle}>Login</button>
-
         <Link to="/forgot-password" style={linkStyle}>Forgot Password?</Link>
       </form>
     </div>

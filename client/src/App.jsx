@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar";
 import Router from "./router";
 import { CartProvider } from "./context/CartContext";
 import Footer from "./components/Footer";
-import { AuthProvider } from "./context/AuthContext"; // NEW
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
