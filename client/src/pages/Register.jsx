@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "../services/api";
+import API from "../services/api";   // ✅ use the single shared axios client
 import "../index.css";
 
 export default function Register() {
@@ -50,7 +50,8 @@ export default function Register() {
 
   const redirectByRole = (role) => {
     if (role === "seller") navigate("/seller");
-    else if (role === "supplier") navigate("/supplier");  // Supplier redirect
+    else if (role === "supplier") navigate("/supplier-dashboard");
+    else if (role === "driver") navigate("/driver-dashboard");
     else navigate("/buyer-orders");
   };
 
@@ -78,6 +79,7 @@ export default function Register() {
     console.log("Register payload:", basePayload);
 
     try {
+      // ✅ consistent path with other components
       const reg = await API.post("/api/users/register", basePayload);
       alert("Registered successfully!");
 
@@ -110,7 +112,6 @@ export default function Register() {
             <option value="seller">Seller</option>
             <option value="supplier">Supplier</option>
             <option value="driver">Driver</option>
- {/* Added supplier */}
           </select>
         </label>
 
