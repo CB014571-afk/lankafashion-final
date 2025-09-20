@@ -1,30 +1,30 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import API from "../services/api";
 
 // ✅ Add onProofClick to props
 export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick }) {
+  const auth = () => {
+    const token = localStorage.getItem("token");
+    return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  };
+
   const handleAccept = async () => {
     try {
-  await API.put(`/delivery/${delivery._id}/status`, {
-        status: "in-progress"
-      });
-      onStatusUpdate();
+      await API.put(`/api/delivery/${delivery._id}/status`, { status: "in-progress" }, auth());
+      onStatusUpdate?.();
     } catch (err) {
-      console.error("Failed to accept delivery:", err);
+      console.error("Failed to accept delivery:", err.response?.data || err.message);
       alert("Failed to update delivery status");
     }
   };
 
   const handleComplete = async () => {
     try {
-  await API.put(`/delivery/${delivery._id}/status`, {
-        status: "completed"
-      });
-      onStatusUpdate();
+      await API.put(`/api/delivery/${delivery._id}/status`, { status: "completed" }, auth());
+      onStatusUpdate?.();
     } catch (err) {
-      console.error("Failed to complete delivery:", err);
+      console.error("Failed to complete delivery:", err.response?.data || err.message);
       alert("Failed to update delivery status");
     }
   };
@@ -52,14 +52,12 @@ export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick })
         alignItems: "center",
         marginBottom: "1rem"
       }}>
-        <h3 style={{ margin: 0 }}>Delivery #{delivery._id.slice(-4)}</h3>
-        <span style={{
-          color: getStatusColor(),
-          fontWeight: "bold"
-        }}>
+        <h3 style={{ margin: 0 }}>Delivery #{delivery._id?.slice?.(-4)}</h3>
+        <span style={{ color: getStatusColor(), fontWeight: "bold" }}>
           {delivery.status?.toUpperCase()}
         </span>
       </div>
+
       <p><strong>Name:</strong> {delivery.name}</p>
       <p><strong>Address:</strong> {delivery.address}</p>
       <p><strong>Email:</strong> {delivery.email}</p>
@@ -89,6 +87,7 @@ export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick })
             Accept Delivery
           </button>
         )}
+
         {delivery.status === "in-progress" && (
           <button
             onClick={handleComplete}
@@ -104,9 +103,10 @@ export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick })
             Mark as Done
           </button>
         )}
+
         {delivery.status === "completed" && !delivery.proofUrl && (
           <button
-            onClick={() => onProofClick(delivery)}
+            onClick={() => onProofClick?.(delivery)}
             style={{
               background: "green",
               color: "white",
@@ -125,7 +125,11 @@ export default function DeliveryCard({ delivery, onStatusUpdate, onProofClick })
       {delivery.proofUrl && (
         <div style={{ marginTop: "1rem" }}>
           <h4>Submitted Proof</h4>
-          <img src={delivery.proofUrl} alt="Proof of Delivery" style={{ maxWidth: 200, maxHeight: 200, display: "block" }} />
+          <img
+            src={delivery.proofUrl}
+            alt="Proof of Delivery"
+            style={{ maxWidth: 200, maxHeight: 200, display: "block" }}
+          />
         </div>
       )}
     </div>

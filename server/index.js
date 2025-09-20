@@ -78,7 +78,7 @@ async function start() {
     await connectDB();
 
     if (!global.__LF_SERVER_STARTED__) {
-      const PORT = process.env.PORT || 5050; // Render provides PORT
+  const PORT = process.env.PORT || 5000; // Use 5000 for local dev, Render provides PORT
       serverInstance = app.listen(PORT, "0.0.0.0", () => {
         console.log(`🚀 Server running on port ${PORT}`);
       });
