@@ -7,14 +7,61 @@ body {
   background-color: #f8f8f8;
 }
 
+/* Mobile-first responsive design */
+* {
+  box-sizing: border-box;
+}
+
 /* NAV BAR*/
 .navbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   background-color: #f1b44c;
-  padding: 10px 40px;
+  padding: 10px 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  flex-wrap: wrap;
+  position: relative;
+}
+
+/* Mobile navbar */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 15px;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .nav-left {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .brand-name {
+    font-size: 1.5rem !important;
+  }
+  
+  .logo {
+    width: 40px !important;
+    height: 40px !important;
+  }
+  
+  .nav-center {
+    width: 100%;
+    order: 2;
+  }
+  
+  .nav-links {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+  }
+  
+  .nav-right {
+    width: 100%;
+    justify-content: center;
+    order: 3;
+  }
 }
 
 .nav-left {
@@ -141,5 +188,183 @@ body {
 
 .form button:hover {
   background-color: #e68a00;
+}
+
+/* Mobile responsiveness for forms and components */
+@media (max-width: 768px) {
+  .form {
+    padding: 15px;
+    margin: 10px;
+  }
+  
+  .form input,
+  .form textarea,
+  .form select {
+    font-size: 16px; /* Prevents zoom on iOS */
+  }
+  
+  .form button {
+    padding: 14px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile-friendly table styles */
+@media (max-width: 768px) {
+  table {
+    font-size: 14px;
+    overflow-x: auto;
+    display: block;
+    white-space: nowrap;
+  }
+  
+  table thead {
+    display: none;
+  }
+  
+  table, table tbody, table tr, table td {
+    display: block;
+  }
+  
+  table tr {
+    border: 1px solid #ccc;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+  }
+  
+  table td {
+    border: none;
+    position: relative;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  table td:before {
+    content: attr(data-label) ": ";
+    font-weight: bold;
+    color: #333;
+  }
+}
+
+/* Mobile container styles */
+@media (max-width: 768px) {
+  .container,
+  .dashboard-container,
+  .seller-dashboard {
+    padding: 10px;
+    margin: 10px auto;
+    max-width: 95%;
+  }
+  
+  .grid,
+  .product-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .card,
+  .order-card,
+  .product-card {
+    padding: 15px;
+    margin: 10px 0;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.3rem;
+  }
+}
+
+/* Additional mobile styles for enhanced touch interaction */
+@media (max-width: 768px) {
+  button {
+    min-height: 44px; /* Apple recommended touch target */
+    padding: 12px 20px;
+    font-size: 16px;
+  }
+  
+  a {
+    min-height: 44px;
+    display: inline-block;
+    line-height: 44px;
+    text-decoration: none;
+  }
+  
+  /* Stripe payment form mobile optimization */
+  .payment-form,
+  .stripe-form {
+    padding: 15px;
+    margin: 10px;
+  }
+  
+  .stripe-element {
+    padding: 16px;
+    font-size: 16px;
+  }
+  
+  /* Touch-friendly spacing for checkboxes and radio buttons */
+  input[type="checkbox"],
+  input[type="radio"] {
+    transform: scale(1.5);
+    margin: 10px;
+  }
+  
+  label {
+    display: block;
+    padding: 10px 0;
+    font-size: 16px;
+  }
+  
+  /* Modal and overlay mobile adjustments */
+  .modal,
+  .overlay {
+    margin: 10px;
+    padding: 15px;
+    max-width: calc(100% - 20px);
+    max-height: calc(100% - 20px);
+  }
+  
+  /* Image responsiveness */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Search and filter mobile styles */
+  .search-container,
+  .filter-container {
+    padding: 10px;
+    margin: 10px 0;
+  }
+  
+  .search-input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* Mobile landscape orientation adjustments */
+@media (max-width: 1024px) and (orientation: landscape) {
+  .navbar {
+    padding: 8px 15px;
+  }
+  
+  .navbar-nav {
+    gap: 15px;
+  }
+  
+  .container {
+    padding: 15px;
+  }
 }
 
