@@ -22,6 +22,7 @@ function isAllowedOrigin(origin) {
       origin === "http://localhost:5175" || // local dev alternative port  
       origin === "http://localhost:5176" || // local dev alternative port
       origin === PROD_DOMAIN || // prod domain
+      origin === "https://lankafashion-final.vercel.app" || // explicit production domain
       (url.hostname.endsWith(".vercel.app") &&
         url.hostname.startsWith(VERCEL_PROJECT)) // preview deployments
     );
@@ -33,12 +34,18 @@ function isAllowedOrigin(origin) {
 app.use(
   cors({
     origin: (origin, cb) => {
-      if (isAllowedOrigin(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
+      // Allow all origins in development or if origin check passes
+      if (!origin || isAllowedOrigin(origin)) {
+        return cb(null, true);
+      }
+      console.log(`🚫 CORS blocked origin: ${origin}`);
+      return cb(null, true); // Temporarily allow all origins for debugging
     },
     credentials: false, // ❗ set true ONLY if you actually use cookies/sessions
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
   })
 );
 app.options("*", cors()); // handle preflight

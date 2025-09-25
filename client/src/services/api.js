@@ -29,4 +29,20 @@ API.interceptors.request.use((cfg) => {
 // (Optional) one-time debug to verify in prod
 console.log("🔎 API baseURL =", API.defaults.baseURL);
 
+// Add response interceptor to handle CORS and other errors
+API.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.message?.includes('CORS') || error.code === 'ERR_NETWORK') {
+      console.error('🚫 CORS/Network Error:', {
+        message: error.message,
+        url: error.config?.url,
+        baseURL: error.config?.baseURL,
+        method: error.config?.method
+      });
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default API;
