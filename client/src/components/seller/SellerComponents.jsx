@@ -180,21 +180,6 @@ export const OrderCard = ({ order, onMarkCompleted, showCompleteButton = true })
         <b>Order Date:</b> {formatDate(order.createdAt || new Date())}
       </p>
     </div>
-    
-    {order.shippingAddress && (
-      <div style={{ marginBottom: "15px", padding: "10px", backgroundColor: "#f8f9fa", borderRadius: "5px" }}>
-        <p style={{ margin: "0", fontSize: "14px" }}><b>Delivery Address:</b></p>
-        <p style={{ margin: "5px 0 0 0", fontSize: "13px", color: "#666" }}>
-          {[
-            order.shippingAddress.addressLine1,
-            order.shippingAddress.addressLine2,
-            order.shippingAddress.city,
-            order.shippingAddress.postalCode,
-            order.shippingAddress.country
-          ].filter(Boolean).join(", ")}
-        </p>
-      </div>
-    )}
 
     <div style={{ marginBottom: "15px" }}>
       <p style={{ margin: "0 0 10px 0", fontSize: "15px", fontWeight: "bold", color: "#333" }}>Order Items:</p>
