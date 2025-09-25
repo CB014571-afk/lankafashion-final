@@ -79,6 +79,36 @@ router.post("/add", auth, requireRole("seller"), async (req, res) => {
   }
 });
 
+// Update a product (only by the seller who owns it)
+router.put("/:id([0-9a-fA-F]{24})", auth, requireRole("seller"), async (req, res) => {
+  try {
+    const { name, description, price, category, shopName, images } = req.body;
+    const finalShopName = shopName || req.user.shopName;
+
+    const product = await Product.findOneAndUpdate(
+      { _id: req.params.id, seller: req.user._id },
+      {
+        name,
+        description,
+        price,
+        category,
+        shopName: finalShopName,
+        images: Array.isArray(images) ? images : [],
+      },
+      { new: true }
+    );
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found or not authorized" });
+    }
+
+    res.json(product);
+  } catch (err) {
+    console.error("Error updating product:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 router.delete("/:id([0-9a-fA-F]{24})", auth, requireRole("seller"), async (req, res) => {
   try {
     const deleted = await Product.findOneAndDelete({ _id: req.params.id, seller: req.user._id });

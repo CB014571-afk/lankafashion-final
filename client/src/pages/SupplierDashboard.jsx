@@ -1,222 +1,187 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import Navbar from "../components/Navbar";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useSupplierOrders } from "../hooks/useSupplierOrders";
+import { 
+  DASHBOARD_STYLES, 
+  INITIAL_DECISION_DATA, 
+  DECISION_OPTIONS 
+} from "../constants/supplierConstants";
+import { validateDecisionForm, handleApiError } from "../utils/supplierUtils";
+import { 
+  LoadingSpinner, 
+  ErrorMessage, 
+  OrderCard, 
+  FormInput, 
+  FormTextarea, 
+  FormSelect 
+} from "../components/supplier/SupplierComponents";
 
 export default function SupplierDashboard() {
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { orders, loading, error, updateOrderDecision } = useSupplierOrders();
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [decisionData, setDecisionData] = useState({
-    decision: "approved",
-    estimatedDeliveryDate: "",
-    supplierNotes: "",
-    trackingInfo: "",
-  });
-  const token = localStorage.getItem("token");
+  const [decisionData, setDecisionData] = useState(INITIAL_DECISION_DATA);
+  const [submitting, setSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Load pending orders assigned to supplier
-  const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.get("/supplier/orders", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      console.log("Orders data:", res.data); // Add this line to debug
-      setOrders(res.data);
-    } catch (err) {
-      console.error("Error fetching orders:", err);
-      alert("Failed to load orders.");
-    } finally {
-      setLoading(false);
+  // Handle order selection for detailed view
+  const handleViewOrderDetails = (order) => {
+    setSelectedOrder(order);
+    setDecisionData(INITIAL_DECISION_DATA);
+    setFormErrors({});
+  };
+
+  // Handle form input changes
+  const handleInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setDecisionData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [field]: ''
+      }));
     }
   };
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
-
-  // Handle approve/reject submit
+  // Handle decision form submission
   const handleDecisionSubmit = async (e) => {
     e.preventDefault();
     if (!selectedOrder) return;
 
+    // Validate form
+    const validation = validateDecisionForm(decisionData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+
     try {
-      const res = await axios.put(
-        `/supplier/orders/${selectedOrder._id}/decision`,
-        {
-          decision: decisionData.decision,
-          estimatedDeliveryDate: decisionData.estimatedDeliveryDate,
-          supplierNotes: decisionData.supplierNotes,
-          trackingInfo: decisionData.trackingInfo,
-        },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      alert(res.data.message);
+      setSubmitting(true);
+      await updateOrderDecision(selectedOrder._id, decisionData);
+      
+      // Reset form and close modal
       setSelectedOrder(null);
-      setDecisionData({
-        decision: "approved",
-        estimatedDeliveryDate: "",
-        supplierNotes: "",
-        trackingInfo: "",
-      });
-      fetchOrders();
-    } catch (err) {
-      console.error("Error updating order decision:", err);
-      alert("Failed to update order.");
+      setDecisionData(INITIAL_DECISION_DATA);
+      setFormErrors({});
+      
+      alert("Order decision updated successfully!");
+    } catch (error) {
+      const errorMessage = handleApiError(error, "Failed to update order decision");
+      alert(errorMessage);
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  // Mark order as delivered
-  const markDelivered = async (orderId) => {
-    try {
-      const res = await axios.put(
-        `/supplier/orders/${orderId}/deliver`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert(res.data.message);
-      fetchOrders();
-    } catch (err) {
-      console.error("Error marking order delivered:", err);
-      alert("Failed to mark as delivered.");
-    }
+  // Close modal without saving
+  const handleCloseModal = () => {
+    setSelectedOrder(null);
+    setDecisionData(INITIAL_DECISION_DATA);
+    setFormErrors({});
   };
 
-  if (loading) return <p>Loading orders...</p>;
+  // Render loading state
+  if (loading) {
+    return <LoadingSpinner message="Loading orders..." />;
+  }
 
-  if (!orders.length)
-    return <p>No pending orders assigned to you at the moment.</p>;
+  // Render error state
+  if (error) {
+    return <ErrorMessage message={error} />;
+  }
 
   return (
-    <>
-      <Navbar />
-      <div style={{ maxWidth: 900, margin: "auto", padding: 20, fontFamily: "Arial" }}>
-      <h2>Supplier Dashboard - Pending Material Orders</h2>
-      <ul style={{ listStyle: "none", padding: 0 }}>
-        {orders.map((order) => (
-          <li
-            key={order._id}
-            style={{
-              border: "1px solid #ccc",
-              borderRadius: 8,
-              padding: 15,
-              marginBottom: 15,
-            }}
-          >
-            <h3>{order.materialName}</h3>
-            <p><strong>Seller:</strong> {order.sellerId?.name} ({order.sellerId?.shopName || "No shop name"})</p>
-            <p><strong>Contact Email:</strong> {order.email || "No email provided"}</p>
-            {/* Add debug info temporarily */}
-            {process.env.NODE_ENV === 'development' && (
-              <small style={{color: 'gray'}}>Debug - Full email data: {JSON.stringify({email: order.email, sellerEmail: order.sellerId?.email})}</small>
-            )}
-            <p><strong>Quantity:</strong> {order.quantity}</p>
-            <p><strong>Preferred Delivery Date:</strong> {new Date(order.preferredDate).toLocaleDateString()}</p>
-            <p><strong>Payment Option:</strong> {order.paymentOption}</p>
-            <p><strong>Status:</strong> {order.status}</p>
-            {order.trackingInfo && <p><strong>Tracking Info:</strong> {order.trackingInfo}</p>}
-            {order.supplierNotes && <p><strong>Supplier Notes:</strong> {order.supplierNotes}</p>}
+    <div style={DASHBOARD_STYLES.container}>
+      <div style={DASHBOARD_STYLES.header}>
+        <h2>Supplier Dashboard - Pending Material Orders</h2>
+        <Link to="/supplier-preorders" style={DASHBOARD_STYLES.preOrderButton}>
+          View Pre-Order Requests
+        </Link>
+      </div>
 
-            {order.status === "pending" && (
-              <>
-                <button onClick={() => setSelectedOrder(order)}>Review / Decide</button>
-              </>
-            )}
-
-            {order.status === "approved" && (
-              <button onClick={() => markDelivered(order._id)}>
-                Mark as Delivered
-              </button>
-            )}
-          </li>
-        ))}
-      </ul>
+      {!orders.length ? (
+        <p>No pending orders assigned to you at the moment.</p>
+      ) : (
+        <ul style={DASHBOARD_STYLES.orderList}>
+          {orders.map((order) => (
+            <OrderCard 
+              key={order._id} 
+              order={order} 
+              onViewDetails={handleViewOrderDetails} 
+            />
+          ))}
+        </ul>
+      )}
 
       {selectedOrder && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "rgba(0,0,0,0.4)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-          }}
-        >
-          <form
-            onSubmit={handleDecisionSubmit}
-            style={{
-              backgroundColor: "white",
-              padding: 20,
-              borderRadius: 10,
-              width: 400,
-              boxShadow: "0 0 10px rgba(0,0,0,0.25)",
-            }}
-          >
-            <h3>Review Order: {selectedOrder.materialName}</h3>
-            <p><strong>Seller Email:</strong> {selectedOrder.email}</p>
+        <div style={DASHBOARD_STYLES.modalOverlay}>
+          <form onSubmit={handleDecisionSubmit} style={DASHBOARD_STYLES.modal}>
+            <h3>Review Order: {selectedOrder.materialName || 'N/A'}</h3>
+            <p><strong>Seller Email:</strong> {selectedOrder.email || 'N/A'}</p>
 
-            <label>
-              Decision:
-              <select
-                value={decisionData.decision}
-                onChange={(e) =>
-                  setDecisionData({ ...decisionData, decision: e.target.value })
-                }
-                required
+            <FormSelect
+              label="Decision"
+              value={decisionData.decision}
+              onChange={handleInputChange('decision')}
+              options={[
+                { value: DECISION_OPTIONS.APPROVED, label: 'Approve' },
+                { value: DECISION_OPTIONS.REJECTED, label: 'Reject' }
+              ]}
+              required
+              error={formErrors.decision}
+            />
+
+            <FormInput
+              label="Estimated Delivery Date"
+              type="date"
+              value={decisionData.estimatedDeliveryDate}
+              onChange={handleInputChange('estimatedDeliveryDate')}
+              required={decisionData.decision === DECISION_OPTIONS.APPROVED}
+              error={formErrors.estimatedDeliveryDate}
+            />
+
+            <FormTextarea
+              label="Supplier Notes"
+              value={decisionData.supplierNotes}
+              onChange={handleInputChange('supplierNotes')}
+              placeholder="Add any notes for the seller..."
+              rows={3}
+              error={formErrors.supplierNotes}
+            />
+
+            <FormInput
+              label="Tracking Info"
+              value={decisionData.trackingInfo}
+              onChange={handleInputChange('trackingInfo')}
+              placeholder="Shipment tracking number, courier etc."
+              error={formErrors.trackingInfo}
+            />
+
+            <div style={DASHBOARD_STYLES.buttonGroup}>
+              <button 
+                type="submit" 
+                disabled={submitting}
+                style={{
+                  ...DASHBOARD_STYLES.submitButton,
+                  opacity: submitting ? 0.6 : 1,
+                  cursor: submitting ? 'not-allowed' : 'pointer'
+                }}
               >
-                <option value="approved">Approve</option>
-                <option value="rejected">Reject</option>
-              </select>
-            </label>
-
-            <label style={{ display: "block", marginTop: 10 }}>
-              Estimated Delivery Date:
-              <input
-                type="date"
-                value={decisionData.estimatedDeliveryDate}
-                onChange={(e) =>
-                  setDecisionData({ ...decisionData, estimatedDeliveryDate: e.target.value })
-                }
-                required={decisionData.decision === "approved"}
-              />
-            </label>
-
-            <label style={{ display: "block", marginTop: 10 }}>
-              Supplier Notes:
-              <textarea
-                rows={3}
-                value={decisionData.supplierNotes}
-                onChange={(e) =>
-                  setDecisionData({ ...decisionData, supplierNotes: e.target.value })
-                }
-              />
-            </label>
-
-            <label style={{ display: "block", marginTop: 10 }}>
-              Tracking Info:
-              <input
-                type="text"
-                value={decisionData.trackingInfo}
-                onChange={(e) =>
-                  setDecisionData({ ...decisionData, trackingInfo: e.target.value })
-                }
-                placeholder="Shipment tracking number, courier etc."
-              />
-            </label>
-
-            <div style={{ marginTop: 15 }}>
-              <button type="submit" style={{ marginRight: 10 }}>
-                Submit
+                {submitting ? 'Submitting...' : 'Submit Decision'}
               </button>
               <button
                 type="button"
-                onClick={() => setSelectedOrder(null)}
+                onClick={handleCloseModal}
+                disabled={submitting}
+                style={{
+                  ...DASHBOARD_STYLES.cancelButton,
+                  opacity: submitting ? 0.6 : 1,
+                  cursor: submitting ? 'not-allowed' : 'pointer'
+                }}
               >
                 Cancel
               </button>
@@ -224,7 +189,6 @@ export default function SupplierDashboard() {
           </form>
         </div>
       )}
-      </div>
-    </>
+    </div>
   );
 }

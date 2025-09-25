@@ -1,194 +1,141 @@
-import React, { useEffect, useState } from "react";
-import API from "../services/api";
-
-
-const tabBtn = (active) => ({
-  padding: "10px 20px",
-  margin: "0 5px",
-  background: active ? "#e2b455" : "#f4f4f4",
-  border: "1px solid #ccc",
-  borderRadius: "5px",
-  cursor: "pointer",
-  fontWeight: "bold",
-});
+import React, { useState, useEffect } from "react";
+import { useSellerProducts } from "../hooks/useSellerProducts";
+import { useSellerOrders } from "../hooks/useSellerOrders";
+import { useSellerMaterialOrders } from "../hooks/useSellerMaterialOrders";
+import { useSellerProfile } from "../hooks/useSellerProfile";
+import { 
+  SELLER_STYLES, 
+  TABS, 
+  ORDER_TABS,
+  INITIAL_PRODUCT_DATA,
+  INITIAL_PASSWORD_DATA 
+} from "../constants/sellerConstants";
+import { 
+  validateProductForm, 
+  validateProfileForm, 
+  validatePasswordForm,
+  handleApiError,
+  prepareProductData 
+} from "../utils/sellerUtils";
+import { 
+  LoadingSpinner,
+  ErrorMessage,
+  TabNavigation,
+  StoreInfo,
+  ProductCard,
+  OrderTabNavigation,
+  OrderCard,
+  PreOrderCard,
+  FormInput,
+  FormTextarea
+} from "../components/seller/SellerComponents";
+import PreOrderPaymentForm from "../components/payment/PreOrderPaymentForm";
+import PaymentReceipt from "../components/payment/PaymentReceipt";
 
 export default function SellerDashboard() {
-  const [tab, setTab] = useState("store");
-  const [loading, setLoading] = useState(true);
-
-  const [products, setProducts] = useState([]);
-  const [pendingOrders, setPendingOrders] = useState([]);
-  const [completedOrders, setCompletedOrders] = useState([]);
-  const [materialOrders, setMaterialOrders] = useState([]);
-    const [preOrders, setPreOrders] = useState([]);
-  const fetchPreOrders = async () => {
-    if (!sellerId) {
-      console.error("❌ No sellerId in localStorage");
-      return;
-    }
-    try {
-      const res = await API.get(`/preorder/seller/${sellerId}`, { headers });
-      setPreOrders(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("❌ Error fetching preorders:", err);
-      setPreOrders([]);
-    }
-  };
-  const [profile, setProfile] = useState({});
-  const [editingProductId, setEditingProductId] = useState(null);
-  const [orderTab, setOrderTab] = useState("pending");
-
-  const [newProduct, setNewProduct] = useState({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    images: "",
-  });
-
+  const [tab, setTab] = useState(TABS.STORE);
+  const [orderTab, setOrderTab] = useState(ORDER_TABS.PENDING);
+  const [preOrderStatusFilter, setPreOrderStatusFilter] = useState('all');
+  const [newProduct, setNewProduct] = useState(INITIAL_PRODUCT_DATA);
   const [profileForm, setProfileForm] = useState({});
-  const [passwordForm, setPasswordForm] = useState({
-    currentPassword: "",
-    newPassword: "",
-  });
-  // Fix: Add paymentOrder state for preorder payment modal
+  const [passwordForm, setPasswordForm] = useState(INITIAL_PASSWORD_DATA);
   const [paymentOrder, setPaymentOrder] = useState(null);
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [selectedPreOrder, setSelectedPreOrder] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [paymentReceiptData, setPaymentReceiptData] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
 
+  // Custom hooks
+  const { 
+    products, 
+    loading: productsLoading,
+    error: productsError,
+    editingProductId,
+    setEditingProductId,
+    addProduct,
+    updateProduct,
+    deleteProduct 
+  } = useSellerProducts();
+
+  const { 
+    pendingOrders, 
+    completedOrders,
+    loading: ordersLoading,
+    error: ordersError,
+    markItemCompleted 
+  } = useSellerOrders();
+
+  const { 
+    materialOrders, 
+    preOrders,
+    loading: materialLoading,
+    error: materialError 
+  } = useSellerMaterialOrders();
+
+  const { 
+    profile,
+    loading: profileLoading,
+    error: profileError,
+    updateProfile,
+    updatePassword,
+    getInitialFormData 
+  } = useSellerProfile();
+
+  // Authentication check
   const token = localStorage.getItem("token");
   const sellerId = localStorage.getItem("userId");
-  const headers = { Authorization: `Bearer ${token}` };
 
-  // Redirect to login if not authenticated
   useEffect(() => {
     if (!sellerId || !token) {
       window.location.href = "/login";
     }
   }, [sellerId, token]);
 
-  // -------- Fetch seller's products --------
-  const fetchProducts = async () => {
-    try {
-      const res = await API.get("/products/mine", { headers });
-      setProducts(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setProducts([]);
-    }
-  };
-
-  // -------- Fetch seller's orders (pending + completed) --------
-  const fetchOrders = async () => {
-    if (!sellerId) {
-      console.error("❌ No sellerId in localStorage");
-      return;
-    }
-    try {
-      const [pendingRes, completedRes] = await Promise.all([
-        API.get(`/orders/seller/${sellerId}`, { headers }),
-        API.get(`/orders/seller/${sellerId}/completed`, { headers }),
-      ]);
-
-      setPendingOrders(Array.isArray(pendingRes.data) ? pendingRes.data : []);
-      setCompletedOrders(Array.isArray(completedRes.data) ? completedRes.data : []);
-    } catch (err) {
-      console.error("❌ Error fetching orders:", err);
-      setPendingOrders([]);
-      setCompletedOrders([]);
-    }
-  };
-
-  // -------- Fetch seller's material pre-orders --------
-  const fetchMaterialOrders = async () => {
-    if (!sellerId) {
-      console.error("❌ No sellerId in localStorage");
-      return;
-    }
-    try {
-      const res = await API.get(`/material-orders/seller/${sellerId}`, { headers });
-      setMaterialOrders(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("❌ Error fetching material orders:", err);
-      setMaterialOrders([]);
-    }
-  };
-
-  // -------- Load profile only from localStorage (quick display) --------
-  const fetchProfile = async () => {
-    try {
-      const userData = JSON.parse(localStorage.getItem("user") || "{}");
-      setProfile(userData);
-      setProfileForm({
-        name: userData?.name || "",
-        email: userData?.email || "",
-        shopName: userData?.shopName || "",
-        description: userData?.description || "",
-      });
-    } catch (err) {
-      console.error("❌ Error loading profile from localStorage:", err);
-    }
-  };
-
-  // -------- Initial load --------
+  // Initialize profile form when profile loads
   useEffect(() => {
-    (async () => {
-      setLoading(true);
-      await Promise.all([
-        fetchProducts(),
-        fetchProfile(),
-        fetchOrders(),
-        fetchMaterialOrders(),
-        fetchPreOrders()
-      ]);
-      setLoading(false);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (profile && Object.keys(profile).length > 0) {
+      setProfileForm(getInitialFormData());
+    }
+  }, [profile]);
 
-  // -------- Add or update product --------
+  // Product form handlers
+  const handleProductInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setNewProduct(prev => ({ ...prev, [field]: value }));
+    
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
   const handleProductSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const payload = {
-        ...newProduct,
-        images: newProduct.images
-          ? newProduct.images.split(",").map((s) => s.trim())
-          : [],
-      };
+    
+    const validation = validateProductForm(newProduct);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
 
+    try {
+      const productData = prepareProductData(newProduct);
+      
       if (editingProductId) {
-        await API.put(`/products/${editingProductId}`, payload, { headers });
-        alert("Product updated!");
+        await updateProduct(editingProductId, productData);
+        alert("Product updated successfully!");
         setEditingProductId(null);
       } else {
-        await API.post("/products/add", payload, { headers });
-        alert("Product added!");
+        await addProduct(productData);
+        alert("Product added successfully!");
       }
-
-      setNewProduct({
-        name: "",
-        description: "",
-        price: "",
-        category: "",
-        images: "",
-      });
-      setTab("store");
-      fetchProducts();
+      
+      setNewProduct(INITIAL_PRODUCT_DATA);
+      setFormErrors({});
+      setTab(TABS.STORE);
     } catch (err) {
-      console.error("Error saving product:", err);
-      alert("Failed to save product");
-    }
-  };
-
-  // -------- Delete product --------
-  const handleDeleteProduct = async (productId) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) return;
-    try {
-      await API.delete(`/products/${productId}`, { headers });
-      setProducts((prev) => prev.filter((p) => p._id !== productId));
-      alert("Product deleted successfully!");
-    } catch (err) {
-      console.error("Error deleting product:", err);
-      alert("Failed to delete product");
+      const errorMessage = handleApiError(err, "Failed to save product");
+      alert(errorMessage);
     }
   };
 
@@ -196,573 +143,513 @@ export default function SellerDashboard() {
     setNewProduct({
       name: product.name,
       description: product.description,
-      price: product.price,
-      category: product.category,
-      images: product.images?.join(", ") || "",
+      price: product.price.toString(),
+      category: product.category || "",
+      images: product.images ? product.images.join(", ") : "",
     });
     setEditingProductId(product._id);
-    setTab("add");
+    setTab(TABS.ADD);
   };
 
-  // -------- Mark order item as done --------
-  const handleOrderDone = async (orderId, itemId) => {
-    if (!window.confirm("Mark this item as done?")) return;
+  const handleDeleteProduct = async (productId) => {
+    if (!confirm("Are you sure you want to delete this product?")) return;
+    
     try {
-      await API.put(`/orders/${orderId}/item/${itemId}/done`, {}, { headers });
-      // Refetch orders to update UI
-      await fetchOrders();
+      await deleteProduct(productId);
+      alert("Product deleted successfully!");
     } catch (err) {
-      console.error("Error marking order done:", err);
-      alert("Failed to mark order as done");
+      const errorMessage = handleApiError(err, "Failed to delete product");
+      alert(errorMessage);
     }
   };
 
-  // -------- Update profile --------
-  const handleProfileUpdate = async () => {
-    try {
-      await API.put("/users/profile", profileForm, { headers });
-      alert("Profile updated!");
-      fetchProfile();
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      alert("Failed to update profile");
+  const handleCancelEdit = () => {
+    setNewProduct(INITIAL_PRODUCT_DATA);
+    setEditingProductId(null);
+    setFormErrors({});
+    setTab(TABS.STORE);
+  };
+
+  // Profile form handlers
+  const handleProfileInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setProfileForm(prev => ({ ...prev, [field]: value }));
+    
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
 
-  // -------- Change password --------
-  const handlePasswordChange = async () => {
+  const handleProfileSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validation = validateProfileForm(profileForm);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+
     try {
-      await API.put("/users/change-password", passwordForm, { headers });
-      alert("Password updated!");
-      setPasswordForm({ currentPassword: "", newPassword: "" });
+      await updateProfile(profileForm);
+      setFormErrors({});
+      alert("Profile updated successfully!");
     } catch (err) {
-      console.error("Error changing password:", err);
-      alert("Error changing password");
+      const errorMessage = handleApiError(err, "Failed to update profile");
+      alert(errorMessage);
     }
   };
 
-  // Helper: Status badge for material order statuses
-  const statusBadge = (status) => {
-    const colors = {
-      pending: "#f0ad4e",
-      approved: "#5cb85c",
-      rejected: "#d9534f",
-      delivered: "#0275d8",
-    };
-    return (
-      <span
-        style={{
-          backgroundColor: colors[status] || "#777",
-          color: "#fff",
-          padding: "3px 8px",
-          borderRadius: "5px",
-          fontSize: "12px",
-          textTransform: "capitalize",
-        }}
-      >
-        {status}
-      </span>
-    );
+  // Password form handlers
+  const handlePasswordInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setPasswordForm(prev => ({ ...prev, [field]: value }));
+    
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
   };
 
-  if (loading) return <div style={{ padding: 20 }}>Loading seller dashboard...</div>;
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validation = validatePasswordForm(passwordForm);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
+
+    try {
+      await updatePassword(passwordForm);
+      setPasswordForm(INITIAL_PASSWORD_DATA);
+      setFormErrors({});
+      alert("Password updated successfully!");
+    } catch (err) {
+      const errorMessage = handleApiError(err, "Failed to update password");
+      alert(errorMessage);
+    }
+  };
+
+  // Order handlers
+  const handleMarkItemCompleted = async (orderId, itemId) => {
+    console.log("🔄 SellerDashboard: Marking item completed", { orderId, itemId });
+    
+    try {
+      await markItemCompleted(orderId, itemId);
+      alert("Item marked as completed!");
+    } catch (err) {
+      console.error("❌ SellerDashboard: Error marking item completed:", err);
+      const errorMessage = handleApiError(err, "Failed to mark item as completed");
+      alert(errorMessage);
+    }
+  };
+
+  // Pre-order payment handlers
+  const handlePayNow = (preOrder) => {
+    setSelectedPreOrder(preOrder);
+    setShowPaymentForm(true);
+  };
+
+  const handlePaymentSuccess = async (paymentIntent, paymentData) => {
+    try {
+      setShowPaymentForm(false);
+      
+      // Store receipt data
+      setPaymentReceiptData({
+        paymentIntent,
+        preOrder: paymentData.preOrder,
+        paymentData
+      });
+      
+      // Show receipt
+      setShowReceipt(true);
+      
+      // Don't close the selected pre-order yet - we'll do it when receipt is closed
+    } catch (err) {
+      console.error("Payment success handling error:", err);
+      alert("Payment was successful but there was an error updating the display. Please refresh the page.");
+    }
+  };
+
+  const handlePaymentError = (error) => {
+    console.error("Payment error:", error);
+    alert("Payment failed. Please try again.");
+  };
+
+  const handleCancelPayment = () => {
+    setShowPaymentForm(false);
+    setSelectedPreOrder(null);
+  };
+
+  const handleCloseReceipt = () => {
+    setShowReceipt(false);
+    setSelectedPreOrder(null);
+    setPaymentReceiptData(null);
+    // Refresh to update the pre-order status
+    window.location.reload();
+  };
+
+  const handlePrintReceipt = () => {
+    console.log("Receipt printed");
+  };
+
+  // Loading state
+  if (productsLoading || ordersLoading || materialLoading || profileLoading) {
+    return <LoadingSpinner message="Loading seller dashboard..." />;
+  }
 
   return (
-    <div style={{ padding: "20px" }}>
-      <h1 style={{ color: "#e2b455" }}>Seller Dashboard</h1>
+    <div style={SELLER_STYLES.container}>
+      <h1 style={SELLER_STYLES.header}>Seller Dashboard</h1>
 
-      {/* Tabs */}
-      <div style={{ marginBottom: "20px" }}>
-        <button style={tabBtn(tab === "store")} onClick={() => setTab("store")}>
-          My Store
-        </button>
-        <button style={tabBtn(tab === "add")} onClick={() => setTab("add")}>
-          {editingProductId ? "Edit Product" : "Add Product"}
-        </button>
-        <button style={tabBtn(tab === "orders")} onClick={() => setTab("orders")}>
-          Orders
-        </button>
-    {/* Removed Material Pre-Orders tab, only using PreOrder Requests */}
-        <button style={tabBtn(tab === "profile")} onClick={() => setTab("profile")}>
-          Profile
-        </button>
-      </div>
+      <TabNavigation 
+        activeTab={tab} 
+        onTabChange={setTab} 
+        editingProductId={editingProductId}
+      />
 
-      {/* My Store */}
-      {tab === "store" && (
+      {/* Store Tab */}
+      {tab === TABS.STORE && (
         <div>
           <h2>My Store</h2>
-          <div
-            style={{
-              marginBottom: "10px",
-              background: "#fdf5e6",
-              padding: "10px",
-              borderRadius: "8px",
-            }}
-          >
-            <p>
-              <b>Shop Name:</b> {profile.shopName || "Not set"}
-            </p>
-            <p>
-              <b>Description:</b> {profile.description || "No description yet"}
-            </p>
-            <p>
-              <b>Contact Email:</b> {profile.email}
-            </p>
-          </div>
+          <StoreInfo profile={profile} />
 
           <h3>Products</h3>
+          {productsError && <ErrorMessage message={productsError} />}
+          
           {products.length === 0 ? (
             <p>No products added yet.</p>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-                gap: "20px",
-              }}
-            >
-              {products.map((p) => (
-                <div
-                  key={p._id}
-                  style={{
-                    border: "1px solid #ddd",
-                    borderRadius: "8px",
-                    background: "#fff",
-                    textAlign: "center",
-                    overflow: "hidden",
-                  }}
-                >
-                  {p.images?.[0] && (
-                    <img
-                      src={p.images[0]}
-                      alt={p.name}
-                      style={{ width: "100%", height: "200px", objectFit: "cover" }}
-                      onError={(e) => (e.currentTarget.style.display = "none")}
-                    />
-                  )}
-                  <div style={{ padding: "10px" }}>
-                    <h4>{p.name}</h4>
-                    <p>{p.description}</p>
-                    <p>
-                      <b>Rs {p.price}</b>
-                    </p>
-                    <div style={{ display: "flex", gap: "8px", justifyContent: "center" }}>
-                      <button
-                        onClick={() => handleEditProduct(p)}
-                        style={{
-                          background: "#007bff",
-                          color: "#fff",
-                          padding: "6px 12px",
-                          border: "none",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(p._id)}
-                        style={{
-                          background: "#dc3545",
-                          color: "#fff",
-                          padding: "6px 12px",
-                          border: "none",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
+            <div style={SELLER_STYLES.productGrid}>
+              {products.map((product) => (
+                <ProductCard
+                  key={product._id}
+                  product={product}
+                  onEdit={handleEditProduct}
+                  onDelete={handleDeleteProduct}
+                />
               ))}
             </div>
           )}
         </div>
       )}
 
-      {/* Add / Edit Product */}
-      {tab === "add" && (
-        <div>
-          <h2>{editingProductId ? "Edit Product" : "Add Product"}</h2>
-          <form
-            onSubmit={handleProductSubmit}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "10px",
-              maxWidth: "400px",
-              background: "#fff",
-              padding: "15px",
-              border: "1px solid #ddd",
-              borderRadius: "8px",
-            }}
-          >
-            <input
-              type="text"
-              placeholder="Product Name"
+      {/* Add/Edit Product Tab */}
+      {tab === TABS.ADD && (
+        <div style={SELLER_STYLES.formContainer}>
+          <h2>{editingProductId ? "Edit Product" : "Add New Product"}</h2>
+          <form onSubmit={handleProductSubmit}>
+            <FormInput
+              label="Product Name"
               value={newProduct.name}
-              onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+              onChange={handleProductInputChange('name')}
               required
+              error={formErrors.name}
             />
-            <input
-              type="text"
-              placeholder="Category"
-              value={newProduct.category}
-              onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
-              required
-            />
-            <input
-              type="number"
-              placeholder="Price"
-              value={newProduct.price}
-              onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
-              required
-            />
-            <textarea
-              placeholder="Description"
+
+            <FormTextarea
+              label="Description"
               value={newProduct.description}
-              onChange={(e) =>
-                setNewProduct({ ...newProduct, description: e.target.value })
-              }
+              onChange={handleProductInputChange('description')}
+              required
+              error={formErrors.description}
             />
-            <input
-              type="text"
-              placeholder="Image URLs (comma separated)"
+
+            <FormInput
+              label="Price (Rs)"
+              type="number"
+              value={newProduct.price}
+              onChange={handleProductInputChange('price')}
+              required
+              error={formErrors.price}
+              min="0"
+              step="0.01"
+            />
+
+            <FormInput
+              label="Category"
+              value={newProduct.category}
+              onChange={handleProductInputChange('category')}
+              required
+              error={formErrors.category}
+            />
+
+            <FormInput
+              label="Images (comma-separated URLs)"
               value={newProduct.images}
-              onChange={(e) => setNewProduct({ ...newProduct, images: e.target.value })}
+              onChange={handleProductInputChange('images')}
+              placeholder="http://example.com/image1.jpg, http://example.com/image2.jpg"
             />
-            <button
-              type="submit"
-              style={{
-                background: "#e2b455",
-                color: "#fff",
-                padding: "10px",
-                border: "none",
-                borderRadius: "5px",
-                fontWeight: "bold",
-              }}
-            >
-              {editingProductId ? "Update Product" : "Add Product"}
-            </button>
+
+            <div style={SELLER_STYLES.buttonGroup}>
+              <button type="submit" style={SELLER_STYLES.submitButton}>
+                {editingProductId ? "Update Product" : "Add Product"}
+              </button>
+              {editingProductId && (
+                <button 
+                  type="button" 
+                  onClick={handleCancelEdit}
+                  style={SELLER_STYLES.cancelButton}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
       )}
 
-      {/* Orders */}
-      {tab === "orders" && (
+      {/* Orders Tab */}
+      {tab === TABS.ORDERS && (
         <div>
           <h2>Orders</h2>
-          <div style={{ marginBottom: "10px" }}>
-            <button
-              style={tabBtn(orderTab === "pending")}
-              onClick={() => setOrderTab("pending")}
-            >
-              Pending Orders
-            </button>
-            <button
-              style={tabBtn(orderTab === "completed")}
-              onClick={() => setOrderTab("completed")}
-            >
-              Completed Orders
-            </button>
-          </div>
+          {ordersError && <ErrorMessage message={ordersError} />}
+          
+          <OrderTabNavigation 
+            activeTab={orderTab}
+            onTabChange={setOrderTab}
+            pendingCount={pendingOrders.length}
+            completedCount={completedOrders.length}
+          />
 
-          {orderTab === "pending" ? (
+          {orderTab === ORDER_TABS.PENDING ? (
             pendingOrders.length === 0 ? (
               <p>No pending orders.</p>
             ) : (
               pendingOrders.map((order) => (
-                <div
+                <OrderCard
                   key={order._id}
-                  style={{
-                    border: "1px solid #ccc",
-                    padding: "10px",
-                    marginBottom: "10px",
-                    borderRadius: "5px",
-                    background: "#fff",
-                  }}
-                >
-                  <p>
-                    <b>Buyer:</b> {order.buyer?.name} ({order.buyer?.email})
-                  </p>
-
-                  {/* If you add address fields in your order/buyer, they'll show here automatically */}
-                  {order.shippingAddress && (
-                    <p>
-                      <b>Deliver to:</b>{" "}
-                      {[
-                        order.shippingAddress.addressLine1,
-                        order.shippingAddress.addressLine2,
-                        order.shippingAddress.city,
-                        order.shippingAddress.state,
-                        order.shippingAddress.postalCode,
-                      ]
-                        .filter(Boolean)
-                        .join(", ")}
-                    </p>
-                  )}
-
-                  <p>
-                    <b>Total:</b> Rs {order.total}
-                  </p>
-                  {order.items.map((item) => (
-                    <div
-                      key={item._id}
-                      style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}
-                    >
-                      • {item.qty} × {item.product?.name} — Rs {item.price}
-                      <button
-                        onClick={() => handleOrderDone(order._id, item._id)}
-                        style={{
-                          marginLeft: "10px",
-                          background: "#28a745",
-                          color: "#fff",
-                          border: "none",
-                          padding: "4px 10px",
-                          borderRadius: "5px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Done
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                  order={order}
+                  onMarkCompleted={handleMarkItemCompleted}
+                  showCompleteButton={true}
+                />
               ))
             )
-          ) : completedOrders.length === 0 ? (
-            <p>No completed orders.</p>
           ) : (
-            completedOrders.map((order) => (
-              <div
-                key={order._id}
-                style={{
-                  border: "1px solid #ccc",
-                  padding: "10px",
-                  marginBottom: "10px",
-                  borderRadius: "5px",
-                  background: "#fff",
-                }}
-              >
-                <p>
-                  <b>Buyer:</b> {order.buyer?.name} ({order.buyer?.email})
-                </p>
-                <p>
-                  <b>Total:</b> Rs {order.total}
-                </p>
-                {order.items.map((item) => (
-                  <div
-                    key={item._id}
-                    style={{ fontSize: "14px", color: "#555", marginTop: "8px" }}
-                  >
-                    • {item.qty} × {item.product?.name} — Rs {item.price}
-                    {item.completedAt && (
-                      <span style={{ marginLeft: "10px", color: "#999" }}>
-                        (Completed on: {new Date(item.completedAt).toLocaleString()})
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))
+            completedOrders.length === 0 ? (
+              <p>No completed orders.</p>
+            ) : (
+              completedOrders.map((order) => (
+                <OrderCard
+                  key={order._id}
+                  order={order}
+                  onMarkCompleted={handleMarkItemCompleted}
+                  showCompleteButton={false}
+                />
+              ))
+            )
           )}
         </div>
       )}
 
-      {/* Material Pre-Orders */}
-      {tab === "materialOrders" && (
-  {/* Removed Material Pre-Order Requests section, only using PreOrder Requests */}
-      )}
-
-      {/* Profile */}
-        {/* PreOrder Requests */}
-        <div style={{ marginTop: 30 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-            <h3 style={{ color: "#cc6600", margin: 0 }}>PreOrder Requests</h3>
-            <button
-              style={{ background: "#e2b455", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
-              onClick={fetchPreOrders}
-            >
-              Refresh
-            </button>
-          </div>
-          {preOrders.length === 0 ? (
-            <p>No preorders found.</p>
+      {/* Pre-Orders Tab */}
+      {tab === TABS.PRE_ORDERS && (
+        <div>
+          <h2>Pre-Orders</h2>
+          {materialError && <ErrorMessage message={materialError} />}
+          
+          {materialLoading ? (
+            <LoadingSpinner message="Loading pre-orders..." />
+          ) : preOrders.length === 0 ? (
+            <div style={{ 
+              textAlign: 'center', 
+              padding: '40px 20px', 
+              color: '#666',
+              backgroundColor: '#f9f9f9',
+              borderRadius: '8px',
+              border: '1px dashed #ccc'
+            }}>
+              <h3>No Pre-Orders Yet</h3>
+              <p>You haven't submitted any pre-orders for materials.</p>
+              <p>When you need materials from suppliers, create a pre-order request and track its status here.</p>
+            </div>
           ) : (
-            <table style={{ width: "100%", borderCollapse: "collapse" }}>
-              <thead>
-                <tr style={{ background: "#f7e6d3" }}>
-                  <th>Material</th>
-                  <th>Quantity</th>
-                  <th>Preferred Date</th>
-                  <th>Payment Option</th>
-                  <th>Supplier Price</th>
-                  <th>Status</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {preOrders.map(order => (
-                  <tr key={order._id} style={{ borderBottom: "1px solid #eee" }}>
-                    <td>{order.materialName}</td>
-                    <td>{order.quantity}</td>
-                    <td>{order.preferredDate ? new Date(order.preferredDate).toLocaleDateString() : ""}</td>
-                    <td>{order.paymentOption === "pay_now" ? "Pay Now" : "Pay Later"}</td>
-                    <td>
-                      {order.supplierResponse?.accepted ? (
-                        <span>Rs {order.supplierResponse.price}</span>
-                      ) : <span>-</span>}
-                    </td>
-                    <td>{order.status}</td>
-                    <td>
-                      {order.supplierResponse?.accepted && !order.paid && (
-                        <>
-                          <button
-                            onClick={() => setPaymentOrder(order._id)}
-                            style={{ background: "#4caf50", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer", marginRight: 8 }}
-                          >
-                            Pay
-                          </button>
-                          <button
-                            onClick={async () => {
-                              if (!window.confirm("Are you sure you want to reject this preorder?")) return;
-                              try {
-                                await API.delete(`/preorder/${order._id}`, {
-                                  headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                                });
-                                if (typeof setPreOrders === "function") {
-                                  setPreOrders(prev => prev.filter(p => p._id !== order._id));
-                                }
-                              } catch (err) {
-                                alert("Error deleting preorder.");
-                              }
-                            }}
-                            style={{ background: "#f44336", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      {order.paid && (
-                        <span style={{ color: '#2196f3', fontWeight: 'bold' }}>Paid</span>
-                      )}
-                      {order.supplierResponse?.accepted === false && (
-                        <span style={{ color: '#f44336', fontWeight: 'bold' }}>Rejected by Supplier</span>
-                      )}
-                      {order.status === "pending" && (
-                        <button
-                          onClick={async () => {
-                            if (!window.confirm("Are you sure you want to cancel this preorder?")) return;
-                            try {
-                              await API.delete(`/preorder/${order._id}`, {
-                                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-                              });
-                              if (typeof setPreOrders === "function") {
-                                setPreOrders(prev => prev.filter(p => p._id !== order._id));
-                              }
-                            } catch (err) {
-                              alert("Error deleting preorder.");
-                            }
-                          }}
-                          style={{ background: "#f44336", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}
-                        >
-                          Cancel
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-          {paymentOrder && (
-            <div className="modal-overlay">
-              <div className="modal-box">
-                <h3>Payment for PreOrder</h3>
-                <p>Amount: Rs {preOrders.find(o => o._id === paymentOrder)?.supplierResponse?.price}</p>
-                <form
-                  onSubmit={async (e) => {
-                    e.preventDefault();
-                    try {
-                      await API.patch(`/preorder/${paymentOrder}/pay`, {}, {
-                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-                      });
-                      setPaymentOrder(null);
-                      fetchPreOrders();
-                    } catch (err) {
-                      alert("Error processing payment.");
-                    }
-                  }}
-                  style={{ display: "flex", flexDirection: "column", gap: 12 }}
-                >
-                  <input type="text" placeholder="Card Number" maxLength={16} required style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc" }} />
-                  <input type="text" placeholder="Expiry (MM/YY)" maxLength={5} required style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc" }} />
-                  <input type="text" placeholder="CVV" maxLength={4} required style={{ padding: 8, borderRadius: 4, border: "1px solid #ccc" }} />
-                  <button
-                    type="submit"
-                    style={{ background: "#4caf50", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer", marginRight: 8 }}
+            <div>
+              <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <strong>Total Pre-Orders: {preOrders.length}</strong>
+                  <select 
+                    value={preOrderStatusFilter} 
+                    onChange={(e) => setPreOrderStatusFilter(e.target.value)}
+                    style={{ padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
                   >
-                    Confirm Payment
-                  </button>
-                  <button type="button" onClick={() => setPaymentOrder(null)} style={{ background: "#f44336", color: "white", border: "none", borderRadius: 4, padding: "6px 12px", cursor: "pointer" }}>Cancel</button>
-                </form>
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="paid">Paid</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="overdue">Overdue</option>
+                  </select>
+                </div>
+                <div style={{ fontSize: '14px', color: '#666' }}>
+                  Active: {preOrders.filter(po => ['pending', 'accepted', 'paid'].includes(po.status)).length} | 
+                  Completed: {preOrders.filter(po => po.status === 'delivered').length} | 
+                  Others: {preOrders.filter(po => ['rejected', 'cancelled', 'overdue'].includes(po.status)).length}
+                </div>
               </div>
+              
+              {(() => {
+                const filteredPreOrders = preOrderStatusFilter === 'all' 
+                  ? preOrders 
+                  : preOrders.filter(po => po.status === preOrderStatusFilter);
+                
+                return filteredPreOrders.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                    No pre-orders with status "{preOrderStatusFilter}"
+                  </div>
+                ) : (
+                  <div>
+                    <p style={{ marginBottom: '15px', color: '#666' }}>
+                      Showing {filteredPreOrders.length} of {preOrders.length} pre-orders
+                      {preOrderStatusFilter !== 'all' && ` with status "${preOrderStatusFilter}"`}
+                    </p>
+                    {filteredPreOrders.map((preOrder) => (
+                      <PreOrderCard
+                        key={preOrder._id}
+                        preOrder={preOrder}
+                        onPayNow={handlePayNow}
+                      />
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
+      )}
 
-        {/* Profile */}
-      {tab === "profile" && (
-        <div>
+      {/* Profile Tab */}
+      {tab === TABS.PROFILE && (
+        <div style={SELLER_STYLES.formContainer}>
           <h2>Profile</h2>
+          {profileError && <ErrorMessage message={profileError} />}
+          
           <h3>Edit Profile</h3>
-          <div style={{ maxWidth: "400px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <input
-              type="text"
-              placeholder="Name"
+          <form onSubmit={handleProfileSubmit}>
+            <FormInput
+              label="Name"
               value={profileForm.name}
-              onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
+              onChange={handleProfileInputChange('name')}
+              required
+              error={formErrors.name}
             />
-            <input
-              type="email"
-              placeholder="Email"
-              value={profileForm.email}
-              onChange={(e) => setProfileForm({ ...profileForm, email: e.target.value })}
-            />
-            <input
-              type="text"
-              placeholder="Shop Name"
-              value={profileForm.shopName}
-              onChange={(e) => setProfileForm({ ...profileForm, shopName: e.target.value })}
-            />
-            <textarea
-              placeholder="Description"
-              value={profileForm.description}
-              onChange={(e) => setProfileForm({ ...profileForm, description: e.target.value })}
-            />
-            <button onClick={handleProfileUpdate}>Save Profile</button>
-          </div>
 
-          <h3>Change Password</h3>
-          <div style={{ maxWidth: "400px", display: "flex", flexDirection: "column", gap: 8 }}>
-            <input
+            <FormInput
+              label="Email"
+              type="email"
+              value={profileForm.email}
+              onChange={handleProfileInputChange('email')}
+              required
+              error={formErrors.email}
+            />
+
+            <FormInput
+              label="Shop Name"
+              value={profileForm.shopName}
+              onChange={handleProfileInputChange('shopName')}
+            />
+
+            <FormTextarea
+              label="Shop Description"
+              value={profileForm.description}
+              onChange={handleProfileInputChange('description')}
+            />
+
+            <button type="submit" style={SELLER_STYLES.submitButton}>
+              Update Profile
+            </button>
+          </form>
+
+          <h3 style={{ marginTop: "30px" }}>Change Password</h3>
+          <form onSubmit={handlePasswordSubmit}>
+            <FormInput
+              label="Current Password"
               type="password"
-              placeholder="Current Password"
               value={passwordForm.currentPassword}
-              onChange={(e) =>
-                setPasswordForm({ ...passwordForm, currentPassword: e.target.value })
-              }
+              onChange={handlePasswordInputChange('currentPassword')}
+              required
+              error={formErrors.currentPassword}
             />
-            <input
+
+            <FormInput
+              label="New Password"
               type="password"
-              placeholder="New Password"
               value={passwordForm.newPassword}
-              onChange={(e) =>
-                setPasswordForm({ ...passwordForm, newPassword: e.target.value })
-              }
+              onChange={handlePasswordInputChange('newPassword')}
+              required
+              error={formErrors.newPassword}
             />
-            <button onClick={handlePasswordChange}>Update Password</button>
+
+            <button type="submit" style={SELLER_STYLES.submitButton}>
+              Update Password
+            </button>
+          </form>
+        </div>
+      )}
+      
+      {/* Payment Form Modal */}
+      {showPaymentForm && selectedPreOrder && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1000
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '20px',
+            maxWidth: '600px',
+            width: '90%',
+            maxHeight: '90%',
+            overflow: 'auto'
+          }}>
+            <PreOrderPaymentForm
+              preOrder={selectedPreOrder}
+              onPaymentSuccess={handlePaymentSuccess}
+              onPaymentError={handlePaymentError}
+              onCancel={handleCancelPayment}
+            />
+          </div>
+        </div>
+      )}
+      
+      {/* Payment Receipt Modal */}
+      {showReceipt && selectedPreOrder && paymentReceiptData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 1001
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '8px',
+            padding: '20px',
+            maxWidth: '700px',
+            width: '90%',
+            maxHeight: '90%',
+            overflow: 'auto'
+          }}>
+            <PaymentReceipt
+              paymentData={paymentReceiptData}
+              preOrder={selectedPreOrder}
+              onClose={handleCloseReceipt}
+              onPrint={handlePrintReceipt}
+            />
           </div>
         </div>
       )}

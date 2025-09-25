@@ -13,7 +13,24 @@ const orderSchema = new mongoose.Schema(
         completedAt: { type: Date }
       }
     ],
-    total: { type: Number, required: true }
+    total: { type: Number, required: true },
+    status: { 
+      type: String, 
+      enum: ["awaiting_payment", "confirmed", "processing", "shipped", "delivered", "cancelled"], 
+      default: "awaiting_payment" 
+    },
+    paymentStatus: { 
+      type: String, 
+      enum: ["pending", "paid", "failed", "refunded"], 
+      default: "pending" 
+    },
+    paymentIntentId: { type: String }, // Stripe payment intent ID
+    shippingAddress: {
+      name: { type: String },
+      address: { type: String },
+      email: { type: String },
+      phone: { type: String }
+    }
   },
   { timestamps: true }
 );

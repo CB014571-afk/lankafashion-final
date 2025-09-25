@@ -1,103 +1,95 @@
 import React, { useState } from "react";
-import { useAuth } from "../context/AuthContext";
-import { useNavigate, Link } from "react-router-dom";
-import API from "../services/api";
+import { useAuthentication } from "../hooks/useAuthentication";
+import { INITIAL_LOGIN_DATA } from "../constants/authConstants";
+import { validateLoginForm } from "../utils/authUtils";
+import {
+  AuthContainer,
+  AuthHeading,
+  AuthInput,
+  AuthButton,
+  ErrorMessage,
+  SuccessMessage,
+  AuthLink,
+  AuthDivider
+} from "../components/auth/AuthComponents";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
-  const { login } = useAuth();
+  const [formData, setFormData] = useState(INITIAL_LOGIN_DATA);
+  const [formErrors, setFormErrors] = useState({});
+  
+  const { loading, error, success, performLogin, clearMessages } = useAuthentication();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      setError("");
-  const res = await API.post("/users/login", { email, password });
-      const { token, user } = res.data;
-      login(token, user.role, user);
-      if (user.role === "seller") {
-        navigate("/seller");
-      } else if (user.role === "supplier") {
-        navigate("/supplier-dashboard");
-      } else if (user.role === "admin") {
-        navigate("/");
-      } else if (user.role === "driver") {
-        navigate("/driver-dashboard");
-      } else {
-        navigate("/");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
-      setError("Invalid email or password.");
+  const handleInputChange = (field) => (e) => {
+    const value = e.target.value;
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error for this field when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+    
+    // Clear global messages when user starts typing
+    if (error || success) {
+      clearMessages();
     }
   };
 
-  const containerStyle = {
-    maxWidth: "400px",
-    margin: "60px auto",
-    padding: "30px",
-    backgroundColor: "#fff4eb",
-    borderRadius: "10px",
-    boxShadow: "0 2px 12px rgba(0, 0, 0, 0.1)",
-    fontFamily: "Arial, sans-serif",
-  };
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    const validation = validateLoginForm(formData);
+    if (!validation.isValid) {
+      setFormErrors(validation.errors);
+      return;
+    }
 
-  const inputStyle = {
-    width: "100%",
-    padding: "10px",
-    margin: "10px 0",
-    borderRadius: "5px",
-    border: "1px solid #ccc",
-  };
-
-  const buttonStyle = {
-    width: "100%",
-    padding: "10px",
-    marginTop: "15px",
-    backgroundColor: "#cc6600",
-    color: "white",
-    border: "none",
-    borderRadius: "5px",
-    cursor: "pointer",
-  };
-
-  const linkStyle = {
-    display: "block",
-    textAlign: "right",
-    marginTop: "10px",
-    fontSize: "14px",
-    color: "#cc6600",
-    textDecoration: "underline",
-    cursor: "pointer",
+    const result = await performLogin(formData);
+    if (result.success) {
+      setFormData(INITIAL_LOGIN_DATA);
+      setFormErrors({});
+    }
   };
 
   return (
-    <div style={containerStyle}>
-      <h2 style={{ textAlign: "center", color: "#cc6600" }}>Login</h2>
-      {error && <p style={{ color: "red", textAlign: "center" }}>{error}</p>}
-      <form onSubmit={handleLogin}>
-        <input
+    <AuthContainer>
+      <AuthHeading>Login</AuthHeading>
+      
+      <form onSubmit={handleSubmit}>
+        <ErrorMessage message={error} />
+        <SuccessMessage message={success} />
+        
+        <AuthInput
           type="email"
+          value={formData.email}
+          onChange={handleInputChange('email')}
           placeholder="Email"
-          style={inputStyle}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          error={formErrors.email}
           required
         />
-        <input
+        
+        <AuthInput
           type="password"
+          value={formData.password}
+          onChange={handleInputChange('password')}
           placeholder="Password"
-          style={inputStyle}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          error={formErrors.password}
           required
-          autoComplete="current-password"
         />
-        <button type="submit" style={buttonStyle}>Login</button>
-        <Link to="/forgot-password" style={linkStyle}>Forgot Password?</Link>
+        
+        <AuthButton type="submit" loading={loading}>
+          Login
+        </AuthButton>
       </form>
-    </div>
+
+      <AuthDivider>or</AuthDivider>
+      
+      <AuthLink to="/register">
+        Don't have an account? Register here
+      </AuthLink>
+      
+      <AuthLink to="/forgot-password">
+        Forgot your password?
+      </AuthLink>
+    </AuthContainer>
   );
 }

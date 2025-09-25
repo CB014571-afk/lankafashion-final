@@ -95,7 +95,17 @@ export default function Navbar() {
     >
       {/* Logo + Title */}
       <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <img src={logo} alt="logo" style={{ width: 40, height: 40, borderRadius: 10 }} />
+        <img 
+          src={logo} 
+          alt="logo" 
+          style={{ 
+            width: 40, 
+            height: 40, 
+            borderRadius: 10, 
+            objectFit: 'cover',
+            flexShrink: 0
+          }} 
+        />
         <span style={{ fontSize: 24, fontWeight: "bold", color: "#222", fontFamily: "Georgia" }}>
           LankaFashion
         </span>
@@ -108,7 +118,6 @@ export default function Navbar() {
           <>
             <Link to="/" style={linkStyle}>Home</Link>
             <Link to="/shop" style={linkStyle}>Shop</Link>
-            <Link to="/buyer-orders" style={linkStyle}>My Orders</Link>
             <Link to="/cart" style={{ ...linkStyle, fontSize: 22 }}>🛒</Link>
             {/* Bell icon for notifications */}
             {token && user && (

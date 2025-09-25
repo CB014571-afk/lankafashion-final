@@ -11,9 +11,14 @@ import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
 import PreOrderRequest from "./pages/PreOrderRequest";
 import SellerOrders from "./pages/SellerOrders";
-import BuyerOrders from "./pages/BuyerOrders";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import PaymentPage from "./pages/PaymentPage";
+import FixedPaymentPage from "./pages/FixedPaymentPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import TestPage from "./pages/TestPage";
+import WorkingPaymentPage from "./pages/WorkingPaymentPage";
+import SimplePaymentPage from "./pages/SimplePaymentPage";
 
 
 import SellerDashboard from "./pages/SellerDashboard";
@@ -41,16 +46,14 @@ export default function Router() {
   <Route path="/shop" element={<Shop />} />
   <Route path="/cart" element={<Cart />} />
   <Route path="/checkout" element={<Checkout />} />
+  <Route path="/payment/:orderId" element={<FixedPaymentPage />} />
+  <Route path="/payment-old/:orderId" element={<PaymentPage />} />
+  <Route path="/payment-success/:orderId" element={<PaymentSuccessPage />} />
+  <Route path="/test" element={<TestPage />} />
+  <Route path="/working-payment" element={<WorkingPaymentPage />} />
+  <Route path="/simple-payment/:orderId" element={<SimplePaymentPage />} />
   <Route path="/order-success" element={<OrderSuccess />} />
   <Route path="/seller/:shopName" element={<SellerProfile />} />
-  <Route
-    path="/buyer-orders"
-    element={
-      <ProtectedRoute allow={["buyer"]}>
-        <BuyerOrders />
-      </ProtectedRoute>
-    }
-  />
   <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/reset-password/:token" element={<ResetPassword />} />
 
@@ -115,7 +118,6 @@ export default function Router() {
     </ProtectedRoute>
   }
 />
-<Route path="/my-orders" element={<BuyerOrders />} />
   
   {/* 404 */}
   <Route

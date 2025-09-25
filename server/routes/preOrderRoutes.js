@@ -23,6 +23,16 @@ router.get("/rejected", auth, requireRole("supplier"), async (req, res) => {
   }
 });
 
+// Supplier fetches paid preorders
+router.get("/paid", auth, requireRole("supplier"), async (req, res) => {
+  try {
+    const preorders = await PreOrderRequest.find({ status: "paid" }).populate('sellerId', 'name email shopName');
+    res.json(preorders);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching paid preorders", error: err });
+  }
+});
+
 // Supplier marks delivery as complete
 router.patch('/:id/deliver', auth, requireRole('supplier'), async (req, res) => {
   try {

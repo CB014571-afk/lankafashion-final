@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import API from "../services/api";
 import AddToCartModal from "../components/AddToCartModal";
 import "./Shop.css";
@@ -49,14 +49,13 @@ export default function Shop() {
         try {
           const query = [];
           if (category) query.push(`category=${encodeURIComponent(category)}`);
-          const res = await API.get(`/api/products/search?${query.join("&")}`);
+          const url = query.length > 0 ? `/api/products?${query.join('&')}` : '/api/products';
+          const res = await API.get(url);
           setProducts(res.data);
           setShopInfo(null);
         } catch (err) {
-          if (err.response?.status === 404) {
-            setProducts([]);
-            setShopInfo(null);
-          }
+          setProducts([]);
+          setShopInfo(null);
           throw err;
         }
       }
@@ -69,31 +68,42 @@ export default function Shop() {
     }
   };
 
-  const fetchMeta = async () => {
+  const fetchCategoriesAndShops = async () => {
     try {
       const res = await API.get("/api/products/meta");
       setCategories(res.data.categories || []);
       setShopNames(res.data.shopNames || []);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setCategories([]);
-        setShopNames([]);
-      }
-      console.error("Error fetching meta data:", err);
+      console.error("Error fetching categories and shops:", err);
+      setCategories([]);
+      setShopNames([]);
     }
   };
 
   const fetchBestSellers = async () => {
     try {
-      const response = await API.get('/api/seller/best-seller');
-      setBestSellers(response.data ? [response.data] : []);
-      console.log('Best seller data:', response.data);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setBestSellers([]);
-      }
-      console.error('Error fetching best sellers:', error);
+      const res = await API.get('/api/seller/best-seller');
+      setBestSellers([res.data]);
+    } catch (err) {
+      console.error("Error fetching best sellers:", err);
       setBestSellers([]);
+    }
+  };
+
+  const fetchRecentlyViewed = async () => {
+    if (!token) {
+      return;
+    }
+    try {
+      const res = await API.get('/api/users/recently-viewed', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      // Extract the product IDs from the response
+      const viewedProducts = res.data.recentlyViewed || [];
+      setRecentlyViewed(viewedProducts.map(product => product._id));
+    } catch (err) {
+      console.error("Error fetching recently viewed:", err);
+      setRecentlyViewed([]);
     }
   };
 
@@ -101,42 +111,30 @@ export default function Shop() {
   const fetchAllReviews = async () => {
     try {
       const res = await API.get("/api/products/reviews");
-      setReviews(res.data);
+      setReviews(res.data || []);
     } catch (err) {
-      if (err.response?.status === 404) {
-        setReviews([]);
-      }
+      console.error("Error fetching reviews:", err);
       setReviews([]);
     }
   };
 
-  // Fetch recently viewed products from backend
-  const fetchRecentlyViewed = async () => {
-    if (!token) return;
-    try {
-      const res = await API.get('/api/users/recently-viewed', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setRecentlyViewed(res.data.recentlyViewed.map(p => p._id));
-    } catch (err) {
-      if (err.response?.status === 404) {
-        setRecentlyViewed([]);
-      }
-      setRecentlyViewed([]);
-    }
-  };
+  useEffect(() => {
+    fetchProducts();
+  }, [category, shopName]);
 
   useEffect(() => {
-    fetchMeta();
-    fetchProducts();
-    fetchBestSellers();
-    fetchRecentlyViewed();
+    fetchCategoriesAndShops();
     fetchAllReviews();
-  }, []); // Only run once on mount
+    fetchBestSellers(); // Call this independently of products
+    fetchRecentlyViewed();
+  }, []);
 
+  // Update recently viewed when products change
   useEffect(() => {
-    fetchProducts();
-  }, [category, shopName]); // Only run when category or shopName changes
+    if (products && products.length > 0 && token) {
+      fetchRecentlyViewed();
+    }
+  }, [products, token]);
 
   // Add review to backend
   const handleSubmit = async (e, productId) => {
@@ -191,12 +189,17 @@ export default function Shop() {
   };
 
   // Sort products: most recently viewed first
-  const sortedProducts = [
-    ...recentlyViewed
-      .map(id => products.find(p => p._id === id))
-      .filter(Boolean),
-    ...products.filter(p => !recentlyViewed.includes(p._id))
-  ];
+  const sortedProducts = useMemo(() => {
+    const recentlyViewedArray = Array.isArray(recentlyViewed) ? recentlyViewed : [];
+    const productsArray = Array.isArray(products) ? products : [];
+    
+    return [
+      ...recentlyViewedArray
+        .map(id => productsArray.find(p => p._id === id))
+        .filter(Boolean),
+      ...productsArray.filter(p => !recentlyViewedArray.includes(p._id))
+    ];
+  }, [recentlyViewed, products]);
 
   return (
     <div className="shop-container">
@@ -279,14 +282,18 @@ export default function Shop() {
                   />
                 )}
                 {(() => {
-                  return bestSellers.length > 0 &&
-                    bestSellers[0]._id === (product.seller?._id || product.seller) && (
+                  // Show bestseller badge if seller matches the best seller
+                  const shouldShowBestSeller = bestSellers.length > 0 && 
+                    bestSellers[0]._id && 
+                    (bestSellers[0]._id.toString() === (product.seller?._id || product.seller)?.toString());
+                  
+                  return shouldShowBestSeller && (
                       <div className="best-seller-badge">⭐ TOP SELLER ⭐</div>
                     );
                 })()}
-                {idx === 0 && recentlyViewed.length > 0 && recentlyViewed[0] === product._id && (
+                {recentlyViewed.includes(product._id) && idx === 0 && (
                   <div className="recently-viewed-label" style={{ background: '#fff700', color: '#333', fontWeight: 'bold', padding: '2px 8px', borderRadius: '6px', display: 'inline-block', marginBottom: '6px' }}>
-                    Most Recently Viewed
+                    Recently Viewed
                   </div>
                 )}
                 <h3 className="product-title">{product.name}</h3>

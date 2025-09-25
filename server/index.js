@@ -18,6 +18,9 @@ function isAllowedOrigin(origin) {
     const url = new URL(origin);
     return (
       origin === "http://localhost:5173" || // local dev
+      origin === "http://localhost:5174" || // local dev alternative port
+      origin === "http://localhost:5175" || // local dev alternative port  
+      origin === "http://localhost:5176" || // local dev alternative port
       origin === PROD_DOMAIN || // prod domain
       (url.hostname.endsWith(".vercel.app") &&
         url.hostname.startsWith(VERCEL_PROJECT)) // preview deployments
@@ -57,6 +60,8 @@ const shopRoutes = require("./routes/shopRoutes");
 const materialOrderRoutes = require("./routes/materialOrderRoutes");
 const deliveryRoutes = require("./routes/deliveryRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const paymentRoutes = require("./routes/paymentRoutes"); // Re-enabled for pre-order payments
+// const testPaymentRoutes = require("./routes/testPaymentRoutes"); // Disabled - not needed
 
 app.use("/api/users", userRoutes);
 app.use("/api/products", productRoutes);
@@ -68,6 +73,8 @@ app.use("/api/preorder", preOrderRoutes);
 app.use("/api/delivery", deliveryRoutes);
 app.use("/api/shops", shopRoutes);
 app.use("/api/material-orders", materialOrderRoutes);
+app.use("/api/payment", paymentRoutes); // Re-enabled for pre-order payments
+// app.use("/api/test-payment", testPaymentRoutes); // Disabled - not needed
 
 // ---- Idempotent startup (prevents EADDRINUSE) ----
 let serverInstance = null;

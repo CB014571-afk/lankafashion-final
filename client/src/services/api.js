@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Read env (Vite exposes only VITE_*). Fallback to your Render host.
-const RAW = (import.meta.env.VITE_API_BASE_URL || "https://lankafashion-final.onrender.com").trim();
+// Read env (Vite exposes only VITE_*). Fallback to local development server.
+const RAW = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000").trim();
 
 // Ensure final baseURL ENDS with /api (no trailing slash after it)
 const ROOT = RAW.replace(/\/+$/, "");

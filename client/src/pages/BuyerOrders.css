@@ -41,11 +41,43 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 15px;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 15px;
 }
 
 .order-id {
   font-weight: bold;
   font-size: 18px;
+  color: #333;
+}
+
+.order-payment-status {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #666;
+}
+
+.payment-status {
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.payment-status.paid {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.payment-status.pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.payment-status.failed {
+  background-color: #f8d7da;
+  color: #721c24;
 }
 
 .order-status {
@@ -73,8 +105,49 @@
 .order-info {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 15px 0;
   border-bottom: 1px solid #eee;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.order-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.receipt-btn {
+  padding: 8px 16px;
+  border: 1px solid #007bff;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.receipt-btn:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+  transform: translateY(-1px);
+}
+
+.receipt-btn.html {
+  background: #28a745;
+  border-color: #28a745;
+}
+
+.receipt-btn.html:hover {
+  background: #1e7e34;
+  border-color: #1e7e34;
 }
 
 .order-items {
