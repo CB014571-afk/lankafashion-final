@@ -13,7 +13,12 @@ import paymentService from '../../services/paymentService';
 let stripePromise;
 const getStripe = () => {
   if (!stripePromise) {
-    stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+    const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (!publishableKey) {
+      console.error('Stripe publishable key not found in environment variables');
+      return null;
+    }
+    stripePromise = loadStripe(publishableKey);
   }
   return stripePromise;
 };

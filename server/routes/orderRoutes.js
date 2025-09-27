@@ -53,6 +53,8 @@ router.post("/", async (req, res) => {
         seller: item.seller,
         qty: item.qty,
         price: item.price,
+        ukSize: item.ukSize, // Include UK size
+        specialRequest: item.specialRequest, // Include special request
         status: "Pending"
       })),
       total: total,
@@ -260,10 +262,11 @@ router.get("/seller/:sellerId([0-9a-fA-F]{24})", async (req, res) => {
         // Get all items for this seller (both pending and completed)
         const sellerItems = o.items.filter(i => String(i.seller) === String(sellerId));
         
-        // Only show this order if it has at least one pending item
-        const hasPendingItems = sellerItems.some(i => i.status === "Pending");
+        // Only get the pending items for this seller
+        const pendingItems = sellerItems.filter(i => i.status === "Pending");
         
-        if (!hasPendingItems) return null;
+        // Only show this order if it has at least one pending item
+        if (pendingItems.length === 0) return null;
         
         return {
           _id: o._id,
@@ -271,11 +274,13 @@ router.get("/seller/:sellerId([0-9a-fA-F]{24})", async (req, res) => {
           shippingAddress: o.shippingAddress || null,
           total: o.total,
           createdAt: o.createdAt,
-          items: sellerItems.map((i) => ({
+          items: pendingItems.map((i) => ({
             _id: i._id,
             product: i.product,
             qty: i.qty,
             price: i.price,
+            ukSize: i.ukSize, // Include UK size
+            specialRequest: i.specialRequest, // Include special request
             status: i.status,
             completedAt: i.completedAt || null,
           })),
@@ -331,6 +336,8 @@ router.get("/seller/:sellerId([0-9a-fA-F]{24})/completed", async (req, res) => {
             product: i.product,
             qty: i.qty,
             price: i.price,
+            ukSize: i.ukSize, // Include UK size
+            specialRequest: i.specialRequest, // Include special request
             status: i.status,
             completedAt: i.completedAt || null,
           })),

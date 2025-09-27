@@ -196,9 +196,23 @@ export const OrderCard = ({ order, onMarkCompleted, showCompleteButton = true })
               <p style={{ margin: "0 0 5px 0", fontSize: "14px", fontWeight: "bold", color: "#333" }}>
                 {item.product?.name || "Product Name Not Available"}
               </p>
-              <div style={{ display: "flex", gap: "20px", fontSize: "13px", color: "#666" }}>
+              <div style={{ display: "flex", gap: "20px", fontSize: "13px", color: "#666", marginBottom: "12px" }}>
                 <span><b>Quantity:</b> {item.qty}</span>
+                {item.ukSize && <span><b>UK Size:</b> {item.ukSize}</span>}
               </div>
+              {item.specialRequest && (
+                <div style={{ 
+                  backgroundColor: "#f8f9fa", 
+                  border: "1px solid #dee2e6",
+                  borderRadius: "6px",
+                  padding: "10px 12px",
+                  margin: "10px 0",
+                  fontSize: "13px",
+                  lineHeight: "1.4"
+                }}>
+                  <span style={{ color: "#ff9800" }}>⭐</span> <b>Special Request:</b> {item.specialRequest}
+                </div>
+              )}
               {item.product?.description && (
                 <p style={{ margin: "5px 0 0 0", fontSize: "12px", color: "#888", fontStyle: "italic" }}>
                   {item.product.description.length > 60 

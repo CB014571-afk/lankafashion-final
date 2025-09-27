@@ -84,6 +84,8 @@ const PaymentPage = () => {
           seller: item.seller || userId, // Default to buyer if no seller
           quantity: item.quantity || item.qty || 1,
           price: item.price || 0,
+          ukSize: item.ukSize, // Include UK size
+          specialRequest: item.specialRequest, // Include special request
           name: item.name || 'Product',
           image: item.image || '/pics/default.jpg'
         })),

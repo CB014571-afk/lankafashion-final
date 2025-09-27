@@ -5,6 +5,12 @@ const Order = require("../models/Order");
 const Notification = require("../models/Notification");
 const router = express.Router();
 
+// Check if Stripe secret key is available
+if (!process.env.STRIPE_SECRET_KEY) {
+  console.error('STRIPE_SECRET_KEY is not set in environment variables');
+  process.exit(1);
+}
+
 // Initialize Stripe with your secret key
 const stripe = Stripe(process.env.STRIPE_SECRET_KEY);
 const PreOrderRequest = require("../models/PreOrderRequest");
@@ -91,6 +97,8 @@ router.post("/confirm-payment", async (req, res) => {
             seller: item.seller,
             qty: item.quantity || item.qty || 1,
             price: item.price,
+            ukSize: item.ukSize, // Include UK size
+            specialRequest: item.specialRequest, // Include special request
             name: item.name,
             image: item.image
           })),
@@ -184,6 +192,13 @@ router.post("/webhook", express.raw({ type: 'application/json' }), (req, res) =>
  * Returns publishable key for client-side Stripe initialization
  */
 router.get("/config", (req, res) => {
+  if (!process.env.STRIPE_PUBLISHABLE_KEY) {
+    return res.status(500).json({
+      success: false,
+      message: "Stripe configuration is missing"
+    });
+  }
+  
   res.status(200).json({
     success: true,
     data: {

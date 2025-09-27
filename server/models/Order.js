@@ -9,6 +9,8 @@ const orderSchema = new mongoose.Schema(
         seller: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         qty: { type: Number, required: true, min: 1 },
         price: { type: Number, required: true },
+        ukSize: { type: String }, // UK size for clothing items
+        specialRequest: { type: String }, // Special requests from customer
         status: { type: String, enum: ["Pending", "Done"], default: "Pending" },
         completedAt: { type: Date }
       }

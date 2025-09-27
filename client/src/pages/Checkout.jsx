@@ -40,6 +40,8 @@ export default function Checkout() {
       seller: item.sellerId,
       qty: item.quantity,
       price: item.price,
+      ukSize: item.ukSize, // Include UK size
+      specialRequest: item.specialRequest, // Include special request
       name: item.name, // Include name for display
     }));
     
