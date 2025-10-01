@@ -150,6 +150,18 @@
   border-color: #1e7e34;
 }
 
+.receipt-btn.download {
+  background: #ffc107;
+  border-color: #ffc107;
+  color: #212529;
+}
+
+.receipt-btn.download:hover {
+  background: #e0a800;
+  border-color: #d39e00;
+  color: #212529;
+}
+
 .order-items {
   margin-top: 15px;
 }

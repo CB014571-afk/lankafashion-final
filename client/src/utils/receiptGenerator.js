@@ -155,20 +155,82 @@ export const generateHTMLReceipt = (order) => {
 export const downloadHTMLReceipt = (order) => {
   try {
     const receiptHTML = generateHTMLReceipt(order);
-    const blob = new Blob([receiptHTML], { type: 'text/html' });
+    
+    // Create blob with proper MIME type for HTML
+    const blob = new Blob([receiptHTML], { 
+      type: 'text/html;charset=utf-8' 
+    });
+    
+    // Create download URL
     const url = window.URL.createObjectURL(blob);
+    
+    // Create temporary download link
     const link = document.createElement('a');
     link.href = url;
     link.download = `Lanka_Fashion_Receipt_${order._id}_${new Date().toISOString().split('T')[0]}.html`;
+    
+    // Force download attributes
+    link.setAttribute('download', link.download);
+    link.style.display = 'none';
+    
+    // Add to DOM, click, and cleanup
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    
+    // Cleanup with slight delay to ensure download starts
+    setTimeout(() => {
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    }, 100);
+    
     console.log('✅ HTML Receipt downloaded successfully');
     return true;
   } catch (error) {
     console.error('❌ Error downloading HTML receipt:', error);
     alert('Failed to download receipt. Please try again.');
     return false;
+  }
+};
+
+// Alternative: Open receipt in new window for viewing/printing
+export const viewHTMLReceipt = (order) => {
+  try {
+    const receiptHTML = generateHTMLReceipt(order);
+    
+    // Open in new window
+    const newWindow = window.open('', '_blank', 'width=800,height=900,scrollbars=yes,resizable=yes');
+    
+    if (newWindow) {
+      newWindow.document.write(receiptHTML);
+      newWindow.document.close();
+      newWindow.focus();
+      
+      console.log('✅ Receipt opened in new window');
+      return true;
+    } else {
+      throw new Error('Popup blocked or failed to open new window');
+    }
+  } catch (error) {
+    console.error('❌ Error opening receipt:', error);
+    alert('Failed to open receipt. Please check if popups are blocked.');
+    return false;
+  }
+};
+
+// Enhanced download function with fallback
+export const downloadReceiptWithFallback = (order) => {
+  try {
+    // Try HTML download first
+    if (downloadHTMLReceipt(order)) {
+      return true;
+    }
+    
+    // Fallback to viewing in new window
+    return viewHTMLReceipt(order);
+  } catch (error) {
+    console.error('❌ Error with receipt download/view:', error);
+    
+    // Final fallback to text download
+    return downloadReceipt(order);
   }
 };

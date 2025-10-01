@@ -105,7 +105,7 @@ export const AUTH_STYLES = {
 
 export const ROLE_ROUTES = {
   [USER_ROLES.SELLER]: '/seller',
-  [USER_ROLES.SUPPLIER]: '/supplier-dashboard',
+  [USER_ROLES.SUPPLIER]: '/supplier-preorders',
   [USER_ROLES.ADMIN]: '/',
   [USER_ROLES.DRIVER]: '/driver-dashboard',
   [USER_ROLES.BUYER]: '/'

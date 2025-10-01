@@ -14,9 +14,6 @@ export default function Checkout() {
     email: "",
     phone: "",
     paymentMethod: "cash",
-    cardNumber: "",
-    expiry: "",
-    cvv: "",
   });
 
   // Calculate the total that will actually be charged
@@ -35,59 +32,51 @@ export default function Checkout() {
         item.price > 0
     );
     
-    const orderItems = validItems.map((item) => ({
-      product: item._id,
-      seller: item.sellerId,
-      qty: item.quantity,
-      price: item.price,
-      ukSize: item.ukSize, // Include UK size
-      specialRequest: item.specialRequest, // Include special request
-      name: item.name, // Include name for display
-    }));
-    
-    const total = orderItems.reduce((sum, item) => sum + item.price * item.qty, 0);
-    
-    return { validItems, orderItems, total };
+    const total = validItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    return { validItems, total };
   };
 
-  const { validItems, orderItems, total: orderTotal } = getValidItemsAndTotal();
+  const { validItems, total: orderTotal } = getValidItemsAndTotal();
+
+  // Prepare order items with all required fields including ukSize and specialRequest
+  const orderItems = validItems.map((item) => ({
+    productId: item._id,
+    sellerId: item.sellerId,
+    name: item.name,
+    price: item.price,
+    qty: item.quantity,
+    ukSize: item.ukSize || null,
+    specialRequest: item.specialRequest || null
+  }));
 
   const handleChange = (e) => {
-    let { name, value } = e.target;
-    
-    // Format card number with spaces
-    if (name === "cardNumber") {
-      value = value.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
-    }
-    
-    // Format expiry date with slash
-    if (name === "expiry") {
-      value = value.replace(/\D/g, "").replace(/(\d{2})(\d)/, "$1/$2");
-    }
-    
-    // Only allow numbers for CVV
-    if (name === "cvv") {
-      value = value.replace(/\D/g, "");
-    }
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (cartItems.length === 0) {
-      alert("Your cart is empty.");
+    
+    // For online payment, redirect to payment page with order data
+    if (formData.paymentMethod === "online") {
+      console.log("💳 Redirecting to payment page...");
+      
+      const orderData = {
+        items: orderItems,
+        total: orderTotal,
+        shippingAddress: {
+          name: formData.name,
+          address: formData.address,
+          email: formData.email,
+          phone: formData.phone
+        }
+      };
+      
+      sessionStorage.setItem('orderData', JSON.stringify(orderData));
+      navigate('/payment');
       return;
     }
 
-    if (orderItems.length === 0) {
-      alert("No valid items with seller found in cart.");
-      return;
-    }
-
+    // Handle cash on delivery
     try {
       // Get buyer ObjectId from localStorage
       let buyer = null;
@@ -159,7 +148,7 @@ export default function Checkout() {
       alert(successMessage);
       
       // 5) Ask if user wants to download receipt
-      const downloadReceipt = window.confirm("� Would you like to download your receipt?");
+      const downloadReceipt = window.confirm("📄 Would you like to download your receipt?");
       if (downloadReceipt) {
         // Create receipt-friendly order object
         const receiptOrder = {
@@ -188,7 +177,7 @@ export default function Checkout() {
 
   return (
     <div className="checkout-form">
-      <h2>🛒 Complete Your Order</h2>
+      <h2>Checkout</h2>
       
       {/* Order Summary */}
       <div className="order-summary" style={{
@@ -230,71 +219,50 @@ export default function Checkout() {
       </div>
 
       <form onSubmit={handleSubmit}>
-        <fieldset style={{ border: 'none', padding: 0, margin: '0 0 24px 0' }}>
-          <legend style={{ 
-            fontSize: '18px', 
-            fontWeight: '600', 
-            color: '#2c3e50', 
-            marginBottom: '16px',
-            padding: 0
-          }}>
-            📝 Delivery Information
-          </legend>
-          
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="text"
-            name="address"
-            placeholder="Delivery Address"
-            value={formData.address}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
-          <input
-            type="tel"
-            name="phone"
-            placeholder="Phone Number"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-          />
-        </fieldset>
+        <input
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={formData.name}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="address"
+          placeholder="Delivery Address"
+          value={formData.address}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="tel"
+          name="phone"
+          placeholder="Phone Number"
+          value={formData.phone}
+          onChange={handleChange}
+          required
+        />
 
-        <fieldset style={{ border: 'none', padding: 0, margin: '0 0 24px 0' }}>
-          <legend style={{ 
-            fontSize: '18px', 
-            fontWeight: '600', 
-            color: '#2c3e50', 
-            marginBottom: '16px',
-            padding: 0
-          }}>
-            💳 Payment Method
-          </legend>
-          
-          <select
-            name="paymentMethod"
-            value={formData.paymentMethod}
-            onChange={handleChange}
-          >
-            <option value="cash">💰 Cash on Delivery</option>
-            <option value="online">🔒 Pay Now (Secure Stripe Payment)</option>
-          </select>
-        </fieldset>
+        <label>
+          <strong>Payment Method:</strong>
+        </label>
+        <select
+          name="paymentMethod"
+          value={formData.paymentMethod}
+          onChange={handleChange}
+        >
+          <option value="cash">Cash on Delivery</option>
+          <option value="online">Pay Now (Secure Stripe Payment)</option>
+        </select>
 
         {formData.paymentMethod === "online" && (
           <>
@@ -318,78 +286,19 @@ export default function Checkout() {
               </div>
             </div>
 
-            <div className="card-details" style={{
-              background: "#ffffff",
-              border: "2px solid #1976d2",
+            <div style={{
+              background: "#e8f5e8",
+              border: "1px solid #4caf50",
               borderRadius: "8px",
-              padding: "20px",
-              marginTop: "15px"
+              padding: "15px",
+              marginTop: "15px",
+              textAlign: "center"
             }}>
-              <h4 style={{ color: "#1976d2", marginBottom: "15px", fontSize: "16px" }}>
-                💳 Card Details
-              </h4>
-              
-              <input
-                type="text"
-                name="cardNumber"
-                placeholder="Card Number (1234 5678 9012 3456)"
-                value={formData.cardNumber}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #ddd",
-                  borderRadius: "4px",
-                  fontSize: "16px",
-                  marginBottom: "10px"
-                }}
-                required
-                maxLength="19"
-              />
-              
-              <div style={{ display: "flex", gap: "10px" }}>
-                <input
-                  type="text"
-                  name="expiry"
-                  placeholder="MM/YY"
-                  value={formData.expiry}
-                  onChange={handleChange}
-                  style={{
-                    flex: "1",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    fontSize: "16px"
-                  }}
-                  required
-                  maxLength="5"
-                />
-                <input
-                  type="text"
-                  name="cvv"
-                  placeholder="CVV"
-                  value={formData.cvv}
-                  onChange={handleChange}
-                  style={{
-                    flex: "1",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "4px",
-                    fontSize: "16px"
-                  }}
-                  required
-                  maxLength="4"
-                />
-              </div>
-              
-              <div style={{ 
-                marginTop: "10px", 
-                fontSize: "12px", 
-                color: "#666", 
-                textAlign: "center" 
-              }}>
-                🔐 Your card information is secure and encrypted
-              </div>
+              <div style={{ fontSize: "18px", marginBottom: "8px" }}>🔒</div>
+              <strong style={{ color: "#2e7d32" }}>Secure Payment Processing</strong>
+              <p style={{ margin: "8px 0 0 0", color: "#555", fontSize: "14px" }}>
+                Click "Proceed to Secure Payment" below to proceed to our encrypted payment page
+              </p>
             </div>
           </>
         )}
@@ -407,7 +316,7 @@ export default function Checkout() {
           }}
         >
           {formData.paymentMethod === "online" ? 
-            `� Pay Securely with Stripe - Rs ${orderTotal.toLocaleString()}` : 
+            `🔒 Proceed to Secure Payment - Rs ${orderTotal.toLocaleString()}` : 
             `📦 Place Order - Rs ${orderTotal.toLocaleString()}`
           }
         </button>

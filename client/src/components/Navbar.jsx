@@ -119,6 +119,7 @@ export default function Navbar() {
             <Link to="/" style={linkStyle}>Home</Link>
             <Link to="/shop" style={linkStyle}>Shop</Link>
             <Link to="/cart" style={{ ...linkStyle, fontSize: 22 }}>🛒</Link>
+            {token && <Link to="/my-orders" style={linkStyle}>My Orders</Link>}
             {/* Bell icon for notifications */}
             {token && user && (
               <div style={{ position: "relative", marginRight: 8, display: "inline-block" }}>
@@ -174,7 +175,6 @@ export default function Navbar() {
         {role === "seller" && (
           <>
             <Link to="/seller" style={linkStyle}>Seller Dashboard</Link>
-            <Link to="/seller-orders" style={linkStyle}>Orders</Link>
             <Link to="/preorder" style={linkStyle}>Pre-Order Materials</Link>
             <button onClick={handleLogout} style={buttonStyle}>Logout</button>
           </>

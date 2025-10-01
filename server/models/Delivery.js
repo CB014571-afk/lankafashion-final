@@ -13,6 +13,7 @@ const DeliverySchema = new mongoose.Schema({
   total: { type: Number, default: 0 },
   items: [{ type: mongoose.Schema.Types.Mixed }],
   buyer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  orderId: { type: mongoose.Schema.Types.ObjectId, ref: 'Order' }, // Link to the main order
   proofUrl: { type: String }, // URL of uploaded proof image
   createdAt: { type: Date, default: Date.now },
 });

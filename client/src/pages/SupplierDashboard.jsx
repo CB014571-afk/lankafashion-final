@@ -98,9 +98,6 @@ export default function SupplierDashboard() {
     <div style={DASHBOARD_STYLES.container}>
       <div style={DASHBOARD_STYLES.header}>
         <h2>Supplier Dashboard - Pending Material Orders</h2>
-        <Link to="/supplier-preorders" style={DASHBOARD_STYLES.preOrderButton}>
-          View Pre-Order Requests
-        </Link>
       </div>
 
       {!orders.length ? (

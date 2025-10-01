@@ -21,6 +21,8 @@ export const useSupplierPreOrders = () => {
         throw new Error("Please log in to access supplier features.");
       }
 
+      console.log("🔄 Fetching supplier pre-orders...");
+
       const [pendingRes, acceptedRes, rejectedRes, paidRes] = await Promise.all([
         API.get("/preorder/pending", {
           headers: { Authorization: `Bearer ${token}` },
@@ -36,12 +38,19 @@ export const useSupplierPreOrders = () => {
         })
       ]);
 
+      console.log("📊 Pre-orders data:", {
+        pending: pendingRes.data?.length || 0,
+        accepted: acceptedRes.data?.length || 0,
+        rejected: rejectedRes.data?.length || 0,
+        paid: paidRes.data?.length || 0
+      });
+
       setPending(pendingRes.data || []);
       setAccepted(acceptedRes.data || []);
       setRejected(rejectedRes.data || []);
       setPaid(paidRes.data || []);
     } catch (err) {
-      console.error("Error loading preorders:", err);
+      console.error("❌ Error loading preorders:", err);
       setError(err.message || "Error loading preorders");
     } finally {
       setLoading(false);

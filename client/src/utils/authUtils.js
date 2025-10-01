@@ -84,7 +84,7 @@ export const getRoleDisplayName = (role) => {
 export const getRedirectPath = (userRole) => {
   const routes = {
     seller: '/seller',
-    supplier: '/supplier-dashboard',
+    supplier: '/supplier-preorders',
     admin: '/',
     driver: '/driver-dashboard',
     buyer: '/'

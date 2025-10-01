@@ -74,7 +74,7 @@ export const PreOrderTable = ({
                 <strong>{preorder.materialName || 'N/A'}</strong>
               </td>
               <td style={PREORDER_STYLES.tableCell}>
-                <div style={{ fontSize: '12px' }}>
+                <div style={{ fontSize: '16px' }}>
                   <div><strong>Email:</strong> {preorder.email || 'N/A'}</div>
                   <div><strong>Phone:</strong> {preorder.contactNumber || 'N/A'}</div>
                 </div>
@@ -104,7 +104,7 @@ export const PreOrderTable = ({
                   {preorder.status === 'pending' && (
                     <input
                       type="number"
-                      placeholder="$0.00"
+                      placeholder="Rupees"
                       value={priceInputs[preorder._id] || ''}
                       onChange={(e) => handlePriceChange(preorder._id, e.target.value)}
                       style={PREORDER_STYLES.priceInput}
