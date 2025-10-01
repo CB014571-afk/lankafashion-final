@@ -533,6 +533,7 @@ export default function SellerDashboard() {
               onChange={handleProfileInputChange('name')}
               required
               error={formErrors.name}
+              autoComplete="name"
             />
 
             <FormInput
@@ -542,12 +543,14 @@ export default function SellerDashboard() {
               onChange={handleProfileInputChange('email')}
               required
               error={formErrors.email}
+              autoComplete="email"
             />
 
             <FormInput
               label="Shop Name"
               value={profileForm.shopName}
               onChange={handleProfileInputChange('shopName')}
+              autoComplete="organization"
             />
 
             <FormTextarea
@@ -570,6 +573,7 @@ export default function SellerDashboard() {
               onChange={handlePasswordInputChange('currentPassword')}
               required
               error={formErrors.currentPassword}
+              autoComplete="current-password"
             />
 
             <FormInput
@@ -579,6 +583,7 @@ export default function SellerDashboard() {
               onChange={handlePasswordInputChange('newPassword')}
               required
               error={formErrors.newPassword}
+              autoComplete="new-password"
             />
 
             <button type="submit" style={SELLER_STYLES.submitButton}>

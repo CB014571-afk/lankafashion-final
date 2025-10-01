@@ -418,29 +418,35 @@ export const FormInput = ({
   onChange, 
   required = false,
   error,
+  id,
   ...props 
-}) => (
-  <div style={SELLER_STYLES.formGroup}>
-    <label style={SELLER_STYLES.label}>
-      {label} {required && <span style={{ color: 'red' }}>*</span>}
-    </label>
-    <input
-      type={type}
-      value={value}
-      onChange={onChange}
-      style={{
-        ...SELLER_STYLES.input,
-        borderColor: error ? '#f44336' : '#ccc'
-      }}
-      {...props}
-    />
-    {error && (
-      <span style={{ color: '#f44336', fontSize: '12px', marginTop: '5px', display: 'block' }}>
-        {error}
-      </span>
-    )}
-  </div>
-);
+}) => {
+  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+  
+  return (
+    <div style={SELLER_STYLES.formGroup}>
+      <label style={SELLER_STYLES.label} htmlFor={inputId}>
+        {label} {required && <span style={{ color: 'red' }}>*</span>}
+      </label>
+      <input
+        id={inputId}
+        type={type}
+        value={value}
+        onChange={onChange}
+        style={{
+          ...SELLER_STYLES.input,
+          borderColor: error ? '#f44336' : '#ccc'
+        }}
+        {...props}
+      />
+      {error && (
+        <span style={{ color: '#f44336', fontSize: '12px', marginTop: '5px', display: 'block' }}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+};
 
 export const FormTextarea = ({ 
   label, 
@@ -448,25 +454,31 @@ export const FormTextarea = ({
   onChange, 
   required = false,
   error,
+  id,
   ...props 
-}) => (
-  <div style={SELLER_STYLES.formGroup}>
-    <label style={SELLER_STYLES.label}>
-      {label} {required && <span style={{ color: 'red' }}>*</span>}
-    </label>
-    <textarea
-      value={value}
-      onChange={onChange}
-      style={{
-        ...SELLER_STYLES.textarea,
-        borderColor: error ? '#f44336' : '#ccc'
-      }}
-      {...props}
-    />
-    {error && (
-      <span style={{ color: '#f44336', fontSize: '12px', marginTop: '5px', display: 'block' }}>
-        {error}
-      </span>
-    )}
-  </div>
-);
+}) => {
+  const textareaId = id || `textarea-${Math.random().toString(36).substr(2, 9)}`;
+  
+  return (
+    <div style={SELLER_STYLES.formGroup}>
+      <label style={SELLER_STYLES.label} htmlFor={textareaId}>
+        {label} {required && <span style={{ color: 'red' }}>*</span>}
+      </label>
+      <textarea
+        id={textareaId}
+        value={value}
+        onChange={onChange}
+        style={{
+          ...SELLER_STYLES.textarea,
+          borderColor: error ? '#f44336' : '#ccc'
+        }}
+        {...props}
+      />
+      {error && (
+        <span style={{ color: '#f44336', fontSize: '12px', marginTop: '5px', display: 'block' }}>
+          {error}
+        </span>
+      )}
+    </div>
+  );
+};

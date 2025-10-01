@@ -44,7 +44,7 @@ export const useSellerProfile = () => {
 
   const updatePassword = async (passwordData) => {
     try {
-      await API.put("/users/password", passwordData, { headers });
+      await API.put("/users/change-password", passwordData, { headers });
     } catch (err) {
       console.error("Error updating password:", err);
       throw err;

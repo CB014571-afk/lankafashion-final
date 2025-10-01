@@ -83,9 +83,13 @@ export default function Shop() {
   const fetchBestSellers = async () => {
     try {
       const res = await API.get('/api/seller/best-seller');
+      console.log('Best seller API response:', res.data);
       setBestSellers([res.data]);
     } catch (err) {
       console.error("Error fetching best sellers:", err);
+      if (err.response?.status === 404) {
+        console.log("No best seller found - this is normal for empty database");
+      }
       setBestSellers([]);
     }
   };
@@ -286,6 +290,16 @@ export default function Shop() {
                   const shouldShowBestSeller = bestSellers.length > 0 && 
                     bestSellers[0]._id && 
                     (bestSellers[0]._id.toString() === (product.seller?._id || product.seller)?.toString());
+                  
+                  // Debug logging
+                  if (bestSellers.length > 0 && idx === 0) {
+                    console.log('Best seller check:', {
+                      bestSellerId: bestSellers[0]._id,
+                      productSellerId: product.seller?._id || product.seller,
+                      shouldShow: shouldShowBestSeller,
+                      productName: product.name
+                    });
+                  }
                   
                   return shouldShowBestSeller && (
                       <div className="best-seller-badge">⭐ TOP SELLER ⭐</div>
