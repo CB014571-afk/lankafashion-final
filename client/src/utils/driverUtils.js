@@ -84,7 +84,7 @@ export const getEstimatedDeliveryTime = (delivery) => {
     }
   }
   
-  return '1-2 hours';
+  return '2-3 weeks';
 };
 
 export const sortDeliveriesByPriority = (deliveries) => {

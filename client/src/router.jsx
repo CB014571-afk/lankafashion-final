@@ -9,6 +9,7 @@ import Cart from "./pages/Cart";
 import SellerProfile from "./pages/SellerProfile";
 import Checkout from "./pages/Checkout";
 import OrderSuccess from "./pages/OrderSuccess";
+import BuyerOrders from "./pages/BuyerOrders";
 import PreOrderRequest from "./pages/PreOrderRequest";
 import SellerOrders from "./pages/SellerOrders";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -53,6 +54,7 @@ export default function Router() {
   <Route path="/working-payment" element={<WorkingPaymentPage />} />
   <Route path="/simple-payment/:orderId" element={<SimplePaymentPage />} />
   <Route path="/order-success" element={<OrderSuccess />} />
+  <Route path="/my-orders" element={<BuyerOrders />} />
   <Route path="/seller/:shopName" element={<SellerProfile />} />
   <Route path="/forgot-password" element={<ForgotPassword />} />
   <Route path="/reset-password/:token" element={<ResetPassword />} />

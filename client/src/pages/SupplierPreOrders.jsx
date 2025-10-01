@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSupplierPreOrders } from "../hooks/useSupplierPreOrders";
 import { PREORDER_STYLES, PREORDER_ACTIONS } from "../constants/preOrderConstants";
 import { handleApiError } from "../utils/supplierUtils";
@@ -17,7 +17,22 @@ export default function SupplierPreOrders() {
     updatePreOrderStatus 
   } = useSupplierPreOrders();
   
-  const [activeTab, setActiveTab] = useState('pending');
+  const [activeTab, setActiveTab] = useState('pending'); // Start with pending as default
+
+  // Auto-switch to a tab with data when data loads
+  useEffect(() => {
+    if (!loading && !error) {
+      if (pending.length > 0) {
+        setActiveTab('pending');
+      } else if (accepted.length > 0) {
+        setActiveTab('accepted');
+      } else if (paid.length > 0) {
+        setActiveTab('paid');
+      } else if (rejected.length > 0) {
+        setActiveTab('rejected');
+      }
+    }
+  }, [loading, error, pending.length, accepted.length, paid.length, rejected.length]);
 
   // Handle accepting a pre-order
   const handleAccept = async (preorderId, additionalData) => {
@@ -78,24 +93,43 @@ export default function SupplierPreOrders() {
     { key: 'rejected', label: 'Rejected', count: rejected.length }
   ];
 
+  const totalCount = pending.length + accepted.length + paid.length + rejected.length;
+
   return (
     <div style={PREORDER_STYLES.container}>
       <h2>Supplier Pre-Order Requests</h2>
       
-      <TabNavigation 
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        tabs={tabs}
-      />
+      {totalCount === 0 ? (
+        <div style={{
+          textAlign: 'center',
+          padding: '60px 20px',
+          backgroundColor: '#f9f9f9',
+          borderRadius: '8px',
+          border: '1px dashed #ccc',
+          color: '#666'
+        }}>
+          <h3>📋 No pending pre-orders to review at this time.</h3>
+          <p>Pre-orders will appear here when sellers request materials from you.</p>
+          <p>Check back later or contact sellers if you're expecting requests.</p>
+        </div>
+      ) : (
+        <>
+          <TabNavigation 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={tabs}
+          />
 
-      <PreOrderTable
-        preorders={getCurrentTabData()}
-        onAccept={handleAccept}
-        onReject={handleReject}
-        actionLoading={actionLoading}
-        showActions={activeTab === 'pending'}
-        activeTab={activeTab}
-      />
+          <PreOrderTable
+            preorders={getCurrentTabData()}
+            onAccept={handleAccept}
+            onReject={handleReject}
+            actionLoading={actionLoading}
+            showActions={activeTab === 'pending'}
+            activeTab={activeTab}
+          />
+        </>
+      )}
     </div>
   );
 }

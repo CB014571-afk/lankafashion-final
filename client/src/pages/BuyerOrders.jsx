@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import API from "../services/api";
 import "./BuyerOrders.css";
-import { downloadReceipt, downloadHTMLReceipt } from "../utils/receiptGenerator";
+import { downloadReceipt, downloadReceiptWithFallback, viewHTMLReceipt } from "../utils/receiptGenerator";
 
 export default function BuyerOrders() {
   const [orders, setOrders] = useState([]);
@@ -85,7 +85,7 @@ export default function BuyerOrders() {
   return (
     <div className="orders-container">
       <div className="orders-header">
-        <h2>My Porders</h2>
+        <h2>📦 My Orders</h2>
       </div>
 
       {loading ? (
@@ -162,18 +162,18 @@ export default function BuyerOrders() {
                   </div>
                   <div className="order-actions">
                     <button 
-                      className="receipt-btn"
-                      onClick={() => downloadReceipt(order)}
-                      title="Download Text Receipt"
+                      className="receipt-btn html"
+                      onClick={() => viewHTMLReceipt(order)}
+                      title="View & Print Receipt"
                     >
-                      📄 Download Receipt
+                      🖨️ View Receipt
                     </button>
                     <button 
-                      className="receipt-btn html"
-                      onClick={() => downloadHTMLReceipt(order)}
-                      title="Download Printable Receipt"
+                      className="receipt-btn download"
+                      onClick={() => downloadReceiptWithFallback(order)}
+                      title="Download HTML Receipt"
                     >
-                      🖨️ Print Receipt
+                      � Download Receipt
                     </button>
                   </div>
                 </div>

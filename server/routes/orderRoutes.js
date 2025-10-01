@@ -77,6 +77,25 @@ router.post("/", async (req, res) => {
   }
 });
 
+// ==================== GET ORDERS FOR LOGGED-IN BUYER ====================
+router.get("/my", auth, async (req, res) => {
+  try {
+    console.log("🔍 Fetching orders for buyer:", req.user._id);
+    
+    const orders = await Order.find({ buyer: req.user._id })
+      .populate("items.product", "name price images")
+      .sort({ createdAt: -1 });
+    
+    console.log("📊 Found orders for buyer:", orders.length);
+    
+    // Always return array, even if empty
+    res.json(orders);
+  } catch (error) {
+    console.error("❌ Error fetching buyer orders:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 // ==================== GET SINGLE ORDER BY ID ====================
 router.get("/:id", async (req, res) => {
   try {
@@ -124,25 +143,6 @@ router.patch("/:id", async (req, res) => {
     res.json({ message: "Order updated successfully", order });
   } catch (error) {
     console.error("❌ Error updating order:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
-
-// ==================== GET ORDERS FOR LOGGED-IN BUYER ====================
-router.get("/my", auth, async (req, res) => {
-  try {
-    console.log("🔍 Fetching orders for buyer:", req.user._id);
-    
-    const orders = await Order.find({ buyer: req.user._id })
-      .populate("items.product", "name price images")
-      .sort({ createdAt: -1 });
-    
-    console.log("📊 Found orders for buyer:", orders.length);
-    
-    // Always return array, even if empty
-    res.json(orders);
-  } catch (error) {
-    console.error("❌ Error fetching buyer orders:", error);
     res.status(500).json({ message: "Server error", error: error.message });
   }
 });
