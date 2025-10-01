@@ -28,6 +28,10 @@ export const AuthInput = ({
       value={value}
       onChange={onChange}
       placeholder={placeholder}
+      autoComplete="off"
+      autoCorrect="off"
+      autoCapitalize="off"
+      spellCheck="false"
       style={{
         ...AUTH_STYLES.input,
         borderColor: error ? '#f44336' : '#ccc'

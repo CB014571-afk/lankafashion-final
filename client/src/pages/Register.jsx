@@ -75,7 +75,7 @@ export default function Register() {
     <AuthContainer>
       <AuthHeading>Register</AuthHeading>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         <ErrorMessage message={error} />
         <SuccessMessage message={success} />
         
@@ -85,6 +85,7 @@ export default function Register() {
           onChange={handleInputChange('name')}
           placeholder="Full Name"
           error={formErrors.name}
+          autoComplete="off"
           required
         />
         
@@ -94,6 +95,7 @@ export default function Register() {
           onChange={handleInputChange('email')}
           placeholder="Email"
           error={formErrors.email}
+          autoComplete="new-email"
           required
         />
         
@@ -103,6 +105,7 @@ export default function Register() {
           onChange={handleInputChange('password')}
           placeholder="Password (min. 6 characters)"
           error={formErrors.password}
+          autoComplete="new-password"
           required
         />
         

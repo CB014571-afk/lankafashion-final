@@ -54,7 +54,7 @@ export default function Login() {
     <AuthContainer>
       <AuthHeading>Login</AuthHeading>
       
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} autoComplete="off">
         <ErrorMessage message={error} />
         <SuccessMessage message={success} />
         
@@ -64,6 +64,7 @@ export default function Login() {
           onChange={handleInputChange('email')}
           placeholder="Email"
           error={formErrors.email}
+          autoComplete="off"
           required
         />
         
@@ -73,6 +74,7 @@ export default function Login() {
           onChange={handleInputChange('password')}
           placeholder="Password"
           error={formErrors.password}
+          autoComplete="off"
           required
         />
         
